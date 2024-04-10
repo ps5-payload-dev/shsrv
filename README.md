@@ -1,16 +1,18 @@
-# PS5 Shell Payload
-ps5-payload-shsrv is a simple Telnet server that can be executed on a Playstation 5
-that has been jailbroken via the [BD-J][bdj] or the [webkit][webkit] entry points.
-The server provides connected clients with a couple of basic UNIX-like commands,
-e.g., cd, mkdir, stat, etc.
+# ps5-payload-shsrv
+This is a simple telnet-like server that can be executed on a Playstation 5
+that has been jailbroken via the [BD-J][bdj] or the [webkit][webkit] entry
+points. The server provides connected clients with a couple of basic UNIX-like
+commands, e.g., cd, mkdir, stat, and the abillity to run payloads stored on
+the PS5 filesystem.
 
 ## Quick-start
-To deploy the shell server, first launch the [ps5-payload-elfldr][elfldr], then
-load the payload and connect using a telnet client by issuing the following commands:
+To deploy ps5-payload-shsrv, first launch the [ps5-payload-elfldr][elfldr], then
+load the payload and connect using a telnet client by issuing the following
+commands:
 
 ```console
 john@localhost:~$ export PS5_HOST=ps5
-john@localhost:~$ wget -q -O - https://github.com/john-tornblom/ps5-payload-shsrv/releases/download/release%2Fv0.4/Payload.zip  | gunzip -c -d | nc -q0 $PS5_HOST 9021
+john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.5/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
 john@localhost:~$ telnet $PS5_HOST 2323
 ```
 
@@ -35,7 +37,7 @@ PATH enviroment variable, which is initialized to /data/hbroot/bin and
 /mnt/usb0/hbroot/bin
 
 ```console
-john@localhost:tmp$ wget https://github.com/john-tornblom/ps5-payload-sdk/releases/download/releases%2Fv0.8/Payload.binaries.zip
+john@localhost:tmp$ wget https://github.com/ps5-payload-dev/sdk/releases/download/v0.11/Payload.binaries.zip
 john@localhost:tmp$ unzip Payload.binaries.zip samples/hello_sprx/hello_sprx.elf
 john@localhost:tmp$ curl -T samples/hello_sprx/hello_sprx.elf ftp://ps5:2121/data/hbroot/bin/
 john@localhost:tmp$ echo "hello_sprx.elf" | nc -q0 $PS5_HOST 2323
@@ -45,9 +47,9 @@ john@localhost:tmp$ echo "hello_sprx.elf" | nc -q0 $PS5_HOST 2323
 Assuming you have the [ps5-payload-sdk][sdk] installed on a Debian-flavored
 operating system, the payload can be compiled using the following commands:
 ```console
-john@localhost:ps5-payload-shsrv$ sudo apt-get install xxd
-john@localhost:ps5-payload-shsrv$ export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
-john@localhost:ps5-payload-shsrv$ make
+john@localhost:ps5-payload-dev/shsrv$ sudo apt-get install xxd
+john@localhost:ps5-payload-dev/shsrv$ export PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
+john@localhost:ps5-payload-dev/shsrv$ make
 ```
 
 ## Limitations
@@ -66,8 +68,7 @@ to discuss the solution properly before you commit time and effort.
 ps5-payload-shsrv is licensed under the GPLv3+.
 
 [bdj]: https://github.com/john-tornblom/bdj-sdk
-[sdk]: https://github.com/john-tornblom/ps5-payload-sdk
+[sdk]: https://github.com/ps5-payload-dev/sdk
 [webkit]: https://github.com/Cryptogenic/PS5-IPV6-Kernel-Exploit
-[elfldr]: https://github.com/john-tornblom/ps5-payload-elfldr
-[issues]: https://github.com/john-tornblom/ps5-payload-shsrv/issues/new
-
+[elfldr]: https://github.com/ps5-payload-dev/elfldr
+[issues]: https://github.com/ps5-payload-dev/shsrv/issues/new
