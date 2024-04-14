@@ -348,3 +348,11 @@ pt_perror(pid_t pid, const char *s) {
   strcat(buf, strerror(err));
   puts(buf);
 }
+
+
+intptr_t
+pt_sceKernelGetProcParam(pid_t pid) {
+  intptr_t faddr = pt_resolve(pid, "959qrazPIrg");
+
+  return pt_call(pid, faddr);
+}
