@@ -31,6 +31,7 @@ along with this program; see the file COPYING. If not, see
 #include "bundles/core/core.elf.inc"
 #include "bundles/http2_get/http2_get.elf.inc"
 #include "bundles/launch/launch.elf.inc"
+#include "bundles/hbldr/hbldr.elf.inc"
 
 
 #define ispathsep(ch) ((ch) == '/' || (ch) == '\\')
@@ -369,6 +370,8 @@ static builtin_elf_map_t elf_map[] = {
   {"http2_get", http2_get_elf},
   {"browse", launch_elf},
   {"launch", launch_elf},
+
+  {"hbldr", hbldr_elf},
 };
 
 

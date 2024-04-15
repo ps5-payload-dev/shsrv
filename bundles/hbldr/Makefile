@@ -14,48 +14,24 @@
 # along with this program; see the file COPYING. If not see
 # <http://www.gnu.org/licenses/>.
 
-PS5_HOST ?= ps5
-PS5_PORT ?= 9021
-
 ifdef PS5_PAYLOAD_SDK
     include $(PS5_PAYLOAD_SDK)/make/toolchain.mk
 else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -Wall -Werror
+CFLAGS += -Wall -Werror
+LDADD  += -lkernel_sys -lSceSystemService -lSceUserService
 
-SUBDIRS := bundles/core bundles/http2_get bundles/launch bundles/hbldr
+all: hbldr.elf.inc
 
-TOPTARGETS := all clean
-
-$(TOPTARGETS): $(SUBDIRS)
-
-$(SUBDIRS):
-	make -C $@ $(MAKECMDGOALS)
-
-.PHONY: $(TOPTARGETS) $(SUBDIRS)
-
-
-all: shsrv.elf sh.elf
-
-shsrv.o: sh.elf.inc
-
-builtin.o: bundles/core/core.elf.inc bundles/http2_get/http2_get.elf.inc \
-           bundles/launch/launch.elf.inc bundles/hbldr/hbldr.elf.inc 
-
-shsrv.elf: shsrv.o elfldr.o pt.o
-	$(LD) -lkernel_sys -o $@ $^
-
-sh.elf: sh.o builtin.o elfldr.o pt.o
-	$(LD) -lkernel_sys -o $@ $^
-
-sh.elf.inc: sh.elf
+hbldr.elf.inc: hbldr.elf
 	xxd -i $^ > $@
 
+hbldr.elf: main.o pt.o elfldr.o
+	$(LD) $^ $(LDADD) -o $@
+
 clean:
-	rm -f *.o *.elf
+	rm -f *.o *.elf *.elf.inc
 
-test: shsrv.elf
-	$(PS5_DEPLOY) -h $(PS5_HOST) -p $(PS5_PORT) $^
-
+test:
