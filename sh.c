@@ -22,8 +22,6 @@ along with this program; see the file COPYING. If not, see
 #include <limits.h>
 #include <signal.h>
 
-#include <sys/mman.h>
-#include <sys/param.h>
 #include <sys/wait.h>
 
 #include "builtin.h"
@@ -206,52 +204,49 @@ sh_which(const char* name, char* path) {
 /**
  * Read a file from disk at the given path.
  **/
-static int
-sh_readfile(const char* path, uint8_t *buf, size_t size) {
+static uint8_t*
+sh_readfile(const char* path) {
+  uint8_t* buf;
   ssize_t len;
   FILE* file;
 
   if(!(file=fopen(path, "rb"))) {
     perror("fopen");
-    return -1;
+    return 0;
   }
 
   if(fseek(file, 0, SEEK_END)) {
     perror("fseek");
-    fclose(file);
-    return -1;
+    return 0;
   }
 
   if((len=ftell(file)) < 0) {
     perror("ftell");
-    fclose(file);
-    return -1;
-  }
-
-  if(size < len) {
-    fprintf(stderr, "%s: not enough memory", path);
-    fclose(file);
-    return -1;
+    return 0;
   }
 
   if(fseek(file, 0, SEEK_SET)) {
     perror("fseek");
-    fclose(file);
-    return -1;
+    return 0;
+  }
+
+  if(!(buf=malloc(len))) {
+    return 0;
   }
 
   if(fread(buf, 1, len, file) != len) {
     perror("fread");
-    fclose(file);
-    return -1;
+    free(buf);
+    return 0;
   }
 
   if(fclose(file)) {
     perror("fclose");
-    return -1;
+    free(buf);
+    return 0;
   }
 
-  return 0;
+  return buf;
 }
 
 
@@ -260,7 +255,6 @@ sh_readfile(const char* path, uint8_t *buf, size_t size) {
  **/
 static int
 sh_execute(char **argv) {
-  size_t size = 0x1000000; //16MiB
   char path[PATH_MAX];
   builtin_cmd_t *cmd;
   pid_t pid = 0;
@@ -279,27 +273,22 @@ sh_execute(char **argv) {
     return cmd(argc, argv);
   }
 
-  if(!sh_which(argv[0], path)) {
-    if((elf=mmap(0, size, PROT_READ | PROT_WRITE,
-		 MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) == MAP_FAILED) {
-      perror("mmap");
-      return -1;
-    }
-
-    if(!sh_readfile(path, elf, size)) {
-      pid = elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, elf, argv);
-    }
-    munmap(elf, size);
-    return sh_waitpid(pid);
-  }
-
-  if((elf=builtin_find_elf(argv[0]))) {
+  if(!sh_which(argv[0], path) && (elf=sh_readfile(path))) {
     pid = elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, elf, argv);
-    return sh_waitpid(pid);
+    free(elf);
+
+  } else if((elf=builtin_find_elf(argv[0]))) {
+    pid = elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, elf, argv);
   }
 
-  fprintf(stderr, "%s: command not found\n", argv[0]);
-  return -1;
+  if(pid < 0) {
+    return EXIT_FAILURE;
+  } else if(pid == 0) {
+    fprintf(stderr, "%s: command not found\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  return sh_waitpid(pid);
 }
 
 
