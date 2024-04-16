@@ -166,14 +166,14 @@ pt_reload(elfldr_ctx_t *ctx, Elf64_Phdr *phdr) {
   else if((addr=pt_mmap(ctx->pid, addr, memsz, prot,
 			MAP_FIXED | MAP_PRIVATE,
 			shm_fd, 0)) == -1) {
-    pt_perror(ctx->pid, "mmap");
+    pt_perror(ctx->pid, "pt_mmap");
     error = -1;
   }
 
   // Create an shm alias fd with write permissions.
   else if((alias_fd=pt_jitshm_alias(ctx->pid, shm_fd,
 				    PROT_READ | PROT_WRITE)) < 0) {
-    pt_perror(ctx->pid, "jitshm_alias");
+    pt_perror(ctx->pid, "pt_jitshm_alias");
     error = -1;
   }
 
@@ -187,7 +187,7 @@ pt_reload(elfldr_ctx_t *ctx, Elf64_Phdr *phdr) {
   // Resore data
   else {
     if(mdbg_copyin(ctx->pid, data, addr, memsz)) {
-      pt_perror(ctx->pid, "mdbg_copyin");
+      perror("mdbg_copyin");
       error = -1;
     }
     pt_msync(ctx->pid, addr, memsz, MS_SYNC);
@@ -342,7 +342,7 @@ elfldr_envp(pid_t pid) {
   if((envp=pt_mmap(pid, 0, size, PROT_WRITE | PROT_READ,
 		   MAP_ANONYMOUS | MAP_PRIVATE,
 		   -1, 0)) == -1) {
-    pt_perror(pid, "mmap");
+    pt_perror(pid, "pt_mmap");
     return 0;
   }
 
@@ -353,7 +353,7 @@ elfldr_envp(pid_t pid) {
 
     // copy string
     if(mdbg_copyin(pid, environ[i], pos, len)) {
-      pt_perror(pid, "mdbg_copyin");
+      perror("mdbg_copyin");
       pt_munmap(pid, envp, size);
       return 0;
     }
