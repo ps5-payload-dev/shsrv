@@ -15,7 +15,7 @@
 # <http://www.gnu.org/licenses/>.
 
 ifdef PS5_PAYLOAD_SDK
-    include $(PS5_PAYLOAD_SDK)/make/toolchain.mk
+    include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
 else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
