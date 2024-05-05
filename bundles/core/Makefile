@@ -31,7 +31,7 @@ core.elf.inc: core.elf
 	xxd -i $^ > $@
 
 core.elf: $(OBJS)
-	$(LD) -lkernel_sys -o $@ $^
+	$(CC) -lkernel_sys -o $@ $^
 
 clean:
 	rm -f *.o *.elf *.elf.inc

@@ -29,7 +29,7 @@ hbldr.elf.inc: hbldr.elf
 	xxd -i $^ > $@
 
 hbldr.elf: main.o pt.o elfldr.o
-	$(LD) $^ $(LDADD) -o $@
+	$(CC) $^ $(LDADD) -o $@
 
 clean:
 	rm -f *.o *.elf *.elf.inc

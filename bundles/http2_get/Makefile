@@ -29,7 +29,7 @@ http2_get.elf.inc: http2_get.elf
 	xxd -i $^ > $@
 
 http2_get.elf: main.o
-	$(LD) $(LDADD) -o $@ $^
+	$(CC) $(LDADD) -o $@ $^
 
 clean:
 	rm -f *.o *.elf *.elf.inc

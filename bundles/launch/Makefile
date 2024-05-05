@@ -29,7 +29,7 @@ launch.elf.inc: launch.elf
 	xxd -i $^ > $@
 
 launch.elf: main.o
-	$(LD) $(LDADD) -o $@ $^
+	$(CC) $(LDADD) -o $@ $^
 
 clean:
 	rm -f *.o *.elf *.elf.inc

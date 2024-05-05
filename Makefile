@@ -45,10 +45,10 @@ builtin.o: bundles/core/core.elf.inc bundles/http2_get/http2_get.elf.inc \
            bundles/launch/launch.elf.inc bundles/hbldr/hbldr.elf.inc 
 
 shsrv.elf: shsrv.o elfldr.o pt.o
-	$(LD) -lkernel_sys -o $@ $^
+	$(CC) -lkernel_sys -o $@ $^
 
 sh.elf: sh.o builtin.o elfldr.o pt.o
-	$(LD) -lkernel_sys -o $@ $^
+	$(CC) -lkernel_sys -o $@ $^
 
 sh.elf.inc: sh.elf
 	xxd -i $^ > $@
