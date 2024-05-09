@@ -356,3 +356,10 @@ pt_sceKernelGetProcParam(pid_t pid) {
 
   return pt_call(pid, faddr);
 }
+
+intptr_t
+pt_getargv(pid_t pid) {
+  intptr_t faddr = pt_resolve(pid, "FJmglmTMdr4");
+
+  return pt_call(pid, faddr);
+}

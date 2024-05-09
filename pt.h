@@ -59,3 +59,4 @@ int pt_pipe(pid_t pid, intptr_t pipefd);
 void pt_perror(pid_t pid, const char *s);
 
 intptr_t pt_sceKernelGetProcParam(pid_t pid);
+intptr_t pt_getargv(pid_t pid);
