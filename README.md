@@ -12,7 +12,7 @@ commands:
 
 ```console
 john@localhost:~$ export PS5_HOST=ps5
-john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.6/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
+john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.7/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
 john@localhost:~$ telnet $PS5_HOST 2323
 ```
 
@@ -35,13 +35,6 @@ get a list of running processes:
 You can also run your own paylaods by placing them in a folder included in the
 PATH enviroment variable, which is initialized to /data/hbroot/bin and
 /mnt/usb0/hbroot/bin
-
-```console
-john@localhost:tmp$ wget https://github.com/ps5-payload-dev/sdk/releases/download/v0.11/Payload.binaries.zip
-john@localhost:tmp$ unzip Payload.binaries.zip samples/hello_sprx/hello_sprx.elf
-john@localhost:tmp$ curl -T samples/hello_sprx/hello_sprx.elf ftp://ps5:2121/data/hbroot/bin/
-john@localhost:tmp$ echo "hello_sprx.elf" | nc -q0 $PS5_HOST 2323
-```
 
 ## Building
 Assuming you have the [ps5-payload-sdk][sdk] installed on a Debian-flavored
