@@ -194,7 +194,7 @@ bigapp_launch(uint32_t user_id, char** argv) {
  *
  **/
 static pid_t
-bigapp_replace(pid_t pid, uint8_t* elf, char** argv) {
+bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
   uint8_t int3instr = 0xcc;
   intptr_t brkpoint;
   uint8_t orginstr;
@@ -244,7 +244,7 @@ bigapp_replace(pid_t pid, uint8_t* elf, char** argv) {
     return -1;
   }
 
-  bigapp_set_argv0(pid, argv[0]);
+  bigapp_set_argv0(pid, progname);
 
   // Execute the ELF
   if(elfldr_exec(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, pid, elf)) {
@@ -341,6 +341,6 @@ main(int argc, char** argv) {
   kernel_set_proc_rootdir(pid, kernel_get_root_vnode());
   kernel_set_proc_jaildir(pid, 0);
 
-  return bigapp_replace(pid, elf, argv+1);
+  return bigapp_replace(pid, elf, argv[1]);
 }
 
