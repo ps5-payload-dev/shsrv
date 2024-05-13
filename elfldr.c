@@ -541,9 +541,6 @@ elfldr_raise_privileges(pid_t pid) {
 }
 
 
-/**
- * Execute an ELF inside the process with the given pid.
- **/
 int
 elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 	    pid_t pid, uint8_t* elf) {

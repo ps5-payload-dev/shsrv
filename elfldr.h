@@ -24,5 +24,9 @@ along with this program; see the file COPYING. If not, see
 pid_t elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
 		   uint8_t *elf, char* argv[]);
 
+
+/**
+ * Execute an ELF inside the process with the given pid.
+ **/
 int elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 		pid_t pid, uint8_t* elf);
