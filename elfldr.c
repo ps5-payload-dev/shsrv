@@ -519,17 +519,7 @@ int
 elfldr_raise_privileges(pid_t pid) {
   static const uint8_t caps[16] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 				   0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
-  intptr_t vnode;
 
-  if(!(vnode=kernel_get_root_vnode())) {
-    return -1;
-  }
-  if(kernel_set_proc_rootdir(pid, vnode)) {
-    return -1;
-  }
-  if(kernel_set_proc_jaildir(pid, 0)) {
-    return -1;
-  }
   if(kernel_set_ucred_uid(pid, 0)) {
     return -1;
   }
@@ -545,18 +535,10 @@ int
 elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 	    pid_t pid, uint8_t* elf) {
   uint8_t caps[16];
-  intptr_t jaildir;
-  intptr_t rootdir;
   uint64_t authid;
   int error = 0;
 
   // backup privileges
-  jaildir = kernel_get_proc_jaildir(pid);
-  if(!(rootdir=kernel_get_proc_rootdir(pid))) {
-    puts("kernel_get_proc_rootdir failed");
-    pt_detach(pid);
-    return -1;
-  }
   if(kernel_get_ucred_caps(pid, caps)) {
     puts("kernel_get_ucred_caps failed");
     pt_detach(pid);
@@ -598,15 +580,6 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
   }
 
   // restore privileges
-  if(kernel_set_proc_jaildir(pid, jaildir)) {
-    puts("kernel_set_proc_jaildir failed");
-    error = -1;
-  }
-  if(kernel_set_proc_rootdir(pid, rootdir)) {
-    puts("kernel_set_proc_rootdir failed");
-    error = -1;
-  }
-
   if(kernel_set_ucred_caps(pid, caps)) {
     puts("kernel_set_ucred_caps failed");
     error = -1;
