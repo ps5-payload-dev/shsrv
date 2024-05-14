@@ -512,46 +512,21 @@ elfldr_set_procname(pid_t pid, const char* name) {
 }
 
 
-/**
- * Escape jail and raise privileges.
- **/
-int
-elfldr_raise_privileges(pid_t pid) {
-  static const uint8_t caps[16] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-				   0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
-
-  if(kernel_set_ucred_uid(pid, 0)) {
-    return -1;
-  }
-  if(kernel_set_ucred_caps(pid, caps)) {
-    return -1;
-  }
-
-  return 0;
-}
-
-
 int
 elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 	    pid_t pid, uint8_t* elf) {
-  uint8_t caps[16];
-  uint64_t authid;
+  uint8_t privcaps[16] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+                          0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
+  uint8_t orgcaps[16];
   int error = 0;
 
-  // backup privileges
-  if(kernel_get_ucred_caps(pid, caps)) {
+  if(kernel_get_ucred_caps(pid, orgcaps)) {
     puts("kernel_get_ucred_caps failed");
     pt_detach(pid);
     return -1;
   }
-  if(!(authid=kernel_get_ucred_authid(pid))) {
-    puts("kernel_get_ucred_authid failed");
-    pt_detach(pid);
-    return -1;
-  }
-
-  if(elfldr_raise_privileges(pid)) {
-    puts("Unable to raise privileges");
+  if(kernel_set_ucred_caps(pid, privcaps)) {
+    puts("kernel_set_ucred_caps failed");
     pt_detach(pid);
     return -1;
   }
@@ -579,13 +554,8 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
     error = -1;
   }
 
-  // restore privileges
-  if(kernel_set_ucred_caps(pid, caps)) {
+  if(kernel_set_ucred_caps(pid, orgcaps)) {
     puts("kernel_set_ucred_caps failed");
-    error = -1;
-  }
-  if(kernel_set_ucred_authid(pid, authid)) {
-    puts("kernel_set_ucred_authid failed");
     error = -1;
   }
 
