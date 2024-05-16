@@ -15,6 +15,7 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <signal.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +43,12 @@ typedef struct app_launch_ctx {
 } app_launch_ctx_t;
 
 
+typedef struct notify_request {
+  char useless1[45];
+  char message[3075];
+} notify_request_t;
+
+
 int sceUserServiceInitialize(void*);
 int sceUserServiceGetForegroundUser(uint32_t *user_id);
 int sceUserServiceTerminate(void);
@@ -51,6 +58,8 @@ int sceSystemServiceGetAppIdOfRunningBigApp(void);
 int sceSystemServiceKillApp(int app_id, int how, int reason, int core_dump);
 int sceSystemServiceLaunchApp(const char* title_id, char** argv,
 			      app_launch_ctx_t* ctx);
+
+int sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
 
 
 __attribute__((constructor)) static void
@@ -64,6 +73,20 @@ constructor(void) {
 __attribute__((destructor)) static void
 destructor(void) {
   sceUserServiceTerminate();
+}
+
+
+static void
+notify(const char *fmt, ...) {
+  notify_request_t req;
+  va_list args;
+
+  bzero(&req, sizeof req);
+  va_start(args, fmt);
+  vsnprintf(req.message, sizeof req.message, fmt, args);
+  va_end(args);
+
+  sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
 }
 
 
@@ -172,7 +195,14 @@ bigapp_launch(uint32_t user_id, char** argv) {
   //PPSA01325: Game (ASTRO)
   //PPSA01659: WebApp (VideoPlayer)
   //NPXS40106: ???? (Playstation Now)
-  sceSystemServiceLaunchApp("NPXS40106", argv, &ctx);
+
+  if(access("/user/app/PPSA01659", 0)) {
+    sceSystemServiceLaunchApp("PPSA01659", argv, &ctx);
+  } else {
+    notify("VideoPlayer (PPSA01659) not found.\n"
+	   "Using PSNow, which impose some limitations.");
+    sceSystemServiceLaunchApp("NPXS40106", argv, &ctx);
+  }
   while(1) {
     if(kevent(kq, NULL, 0, &evt, 1, NULL) < 0) {
       perror("kevent");
