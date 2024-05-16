@@ -684,6 +684,10 @@ elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
     return -1;
   }
 
+  if(kernel_set_ucred_uid(pid, 0)) {
+    perror("kernel_set_ucred_uid failed()");
+  }
+
   // Execute the ELF
   elfldr_set_procname(pid, argv[0]);
   if(elfldr_exec(stdin_fd, stdout_fd, stderr_fd, pid, elf)) {
