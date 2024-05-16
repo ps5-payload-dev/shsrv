@@ -171,7 +171,8 @@ bigapp_launch(uint32_t user_id, char** argv) {
 
   //PPSA01325: Game (ASTRO)
   //PPSA01659: WebApp (VideoPlayer)
-  sceSystemServiceLaunchApp("PPSA01659", argv, &ctx);
+  //NPXS40106: ???? (Playstation Now)
+  sceSystemServiceLaunchApp("NPXS40106", argv, &ctx);
   while(1) {
     if(kevent(kq, NULL, 0, &evt, 1, NULL) < 0) {
       perror("kevent");
