@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
+#include <fcntl.h>
 #include <signal.h>
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +23,8 @@ along with this program; see the file COPYING. If not, see
 #include <unistd.h>
 
 #include <sys/mman.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <sys/wait.h>
@@ -34,6 +36,30 @@ along with this program; see the file COPYING. If not, see
 #include "pt.h"
 
 
+#define PSNOW_EBOOT "/system_ex/app/NPXS40106/eboot.bin"
+#define FAKE_PATH "/system_ex/app/FAKE00000"
+
+#define IOVEC_ENTRY(x) {x ? x : 0, \
+			x ? strlen(x)+1 : 0}
+#define IOVEC_SIZE(x) (sizeof(x) / sizeof(struct iovec))
+
+
+static const char param_json[] = "{\n"
+  "  \"applicationCategoryType\": 0,\n"
+  "  \"attribute\": 1,\n"
+  "  \"attribute2\": 0,\n"
+  "  \"attribute3\": 4,\n"
+  "  \"titleId\": \"FAKE00000\",\n"
+  "  \"contentId\": \"IV9999-FAKE00000_00-HOMEBREWLOADER00\",\n"
+  "  \"localizedParameters\": {\n"
+  "    \"defaultLanguage\": \"en-US\",\n"
+  "    \"en-US\": {\n"
+  "      \"titleName\": \"Homebrew Loader\"\n"
+  "    }\n"
+  "  }\n"
+  "}\n";
+
+
 typedef struct app_launch_ctx {
   uint32_t structsize;
   uint32_t user_id;
@@ -41,12 +67,6 @@ typedef struct app_launch_ctx {
   uint64_t crash_report;
   uint32_t check_flag;
 } app_launch_ctx_t;
-
-
-typedef struct notify_request {
-  char useless1[45];
-  char message[3075];
-} notify_request_t;
 
 
 int sceUserServiceInitialize(void*);
@@ -58,8 +78,6 @@ int sceSystemServiceGetAppIdOfRunningBigApp(void);
 int sceSystemServiceKillApp(int app_id, int how, int reason, int core_dump);
 int sceSystemServiceLaunchApp(const char* title_id, char** argv,
 			      app_launch_ctx_t* ctx);
-
-int sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
 
 
 __attribute__((constructor)) static void
@@ -76,17 +94,127 @@ destructor(void) {
 }
 
 
-static void
-notify(const char *fmt, ...) {
-  notify_request_t req;
-  va_list args;
+int
+remount_system_ex(void) {
+  struct iovec iov[] = {
+    IOVEC_ENTRY("from"),      IOVEC_ENTRY("/dev/ssd0.system_ex"),
+    IOVEC_ENTRY("fspath"),    IOVEC_ENTRY("/system_ex"),
+    IOVEC_ENTRY("fstype"),    IOVEC_ENTRY("exfatfs"),
+    IOVEC_ENTRY("large"),     IOVEC_ENTRY("yes"),
+    IOVEC_ENTRY("timezone"),  IOVEC_ENTRY("static"),
+    IOVEC_ENTRY("async"),     IOVEC_ENTRY(NULL),
+    IOVEC_ENTRY("ignoreacl"), IOVEC_ENTRY(NULL),
+  };
 
-  bzero(&req, sizeof req);
-  va_start(args, fmt);
-  vsnprintf(req.message, sizeof req.message, fmt, args);
-  va_end(args);
+  if(nmount(iov, IOVEC_SIZE(iov), MNT_UPDATE)) {
+    perror("nmount");
+    return -1;
+  }
 
-  sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
+  return 0;
+}
+
+
+/**
+ * Read a file from disk at the given path.
+ **/
+static uint8_t*
+readfile(const char* path, size_t* size) {
+  uint8_t* buf;
+  ssize_t len;
+  FILE* file;
+
+  if(!(file=fopen(path, "rb"))) {
+    perror(path);
+    return 0;
+  }
+
+  if(fseek(file, 0, SEEK_END)) {
+    perror("fseek");
+    return 0;
+  }
+
+  if((len=ftell(file)) < 0) {
+    perror("ftell");
+    return 0;
+  }
+
+  if(fseek(file, 0, SEEK_SET)) {
+    perror("fseek");
+    return 0;
+  }
+
+  if(!(buf=malloc(len))) {
+    return 0;
+  }
+
+  if(fread(buf, 1, len, file) != len) {
+    perror("fread");
+    free(buf);
+    return 0;
+  }
+
+  if(fclose(file)) {
+    perror("fclose");
+    free(buf);
+    return 0;
+  }
+
+  if(size) {
+    *size = len;
+  }
+
+  return buf;
+}
+
+
+static int
+fakeapp_create_if_missing(void) {
+  struct stat info;
+  uint8_t* buf;
+  size_t size;
+  int fd;
+
+  if(stat(FAKE_PATH, &info)) {
+    if(mkdir(FAKE_PATH, 0755)) {
+      return -1;
+    }
+  }
+
+  if(stat(FAKE_PATH "/sce_sys", &info)) {
+    if(mkdir(FAKE_PATH "/sce_sys", 0755)) {
+      return -1;
+    }
+  }
+
+  if(stat(FAKE_PATH "/sce_sys/param.json", &info)) {
+    if((fd=open(FAKE_PATH "/sce_sys/param.json", O_CREAT|O_WRONLY, 0644)) < 0) {
+      return -1;
+    }
+    if(write(fd, param_json, sizeof(param_json)-1) != sizeof(param_json)-1) {
+      close(fd);
+      return -1;
+    }
+    close(fd);
+  }
+
+  if(stat(FAKE_PATH "/eboot.bin", &info)) {
+    if(!(buf=readfile(PSNOW_EBOOT, &size))) {
+      return -1;
+    }
+    if((fd=open(FAKE_PATH "/eboot.bin", O_CREAT|O_WRONLY, 0755)) < 0) {
+      free(buf);
+      return -1;
+    }
+    if(write(fd, buf, size) != size) {
+      free(buf);
+      close(fd);
+      return -1;
+    }
+    free(buf);
+    close(fd);
+  }
+  return 0;
 }
 
 
@@ -192,17 +320,12 @@ bigapp_launch(uint32_t user_id, char** argv) {
     return -1;
   }
 
-  //PPSA01325: Game (ASTRO)
-  //PPSA01659: WebApp (VideoPlayer)
-  //NPXS40106: ???? (Playstation Now)
-
-  if(access("/user/app/PPSA01659", 0)) {
-    sceSystemServiceLaunchApp("PPSA01659", argv, &ctx);
-  } else {
-    notify("VideoPlayer (PPSA01659) not found.\n"
-	   "Using PSNow, which impose some limitations.");
-    sceSystemServiceLaunchApp("NPXS40106", argv, &ctx);
+  if(sceSystemServiceLaunchApp("FAKE00000", argv, &ctx) < 0) {
+    perror("sceSystemServiceLaunchApp");
+    close(kq);
+    return -1;
   }
+
   while(1) {
     if(kevent(kq, NULL, 0, &evt, 1, NULL) < 0) {
       perror("kevent");
@@ -288,55 +411,6 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
 }
 
 
-/**
- * Read a file from disk at the given path.
- **/
-static uint8_t*
-readfile(const char* path) {
-  uint8_t* buf;
-  ssize_t len;
-  FILE* file;
-
-  if(!(file=fopen(path, "rb"))) {
-    perror("fopen");
-    return 0;
-  }
-
-  if(fseek(file, 0, SEEK_END)) {
-    perror("fseek");
-    return 0;
-  }
-
-  if((len=ftell(file)) < 0) {
-    perror("ftell");
-    return 0;
-  }
-
-  if(fseek(file, 0, SEEK_SET)) {
-    perror("fseek");
-    return 0;
-  }
-
-  if(!(buf=malloc(len))) {
-    return 0;
-  }
-
-  if(fread(buf, 1, len, file) != len) {
-    perror("fread");
-    free(buf);
-    return 0;
-  }
-
-  if(fclose(file)) {
-    perror("fclose");
-    free(buf);
-    return 0;
-  }
-
-  return buf;
-}
-
-
 int
 main(int argc, char** argv) {
   uint32_t user_id;
@@ -349,8 +423,18 @@ main(int argc, char** argv) {
     return -1;
   }
 
-  if(!(elf=readfile(argv[1]))) {
+  if(!(elf=readfile(argv[1], 0))) {
     return -1;
+  }
+
+  if(fakeapp_create_if_missing()) {
+    if(remount_system_ex()) {
+      return -1;
+    }
+    if(fakeapp_create_if_missing()) {
+      perror("fakeapp_create_if_missing");
+      return -1;
+    }
   }
 
   if(sceUserServiceGetForegroundUser(&user_id)) {
