@@ -315,10 +315,30 @@ main_sleep(int argc, char **argv) {
 }
 
 
+static int
+main_authid(int argc, char **argv) {
+  pid_t pid = getpid();
+  uint64_t authid = 0;
+
+  if(argc <= 1) {
+    authid = kernel_get_ucred_authid(pid);
+    printf("0x%lx\n", authid);
+    return authid != 0;
+  }
+
+  if((authid=strtoul(argv[1], 0, 0))) {
+    return kernel_set_ucred_authid(pid, authid);
+  }
+
+  return -1;
+}
+
+
 /**
  * Lookup table for builtin commands.
  **/
 static builtin_cmd_map_t cmd_map[] = {
+  {"authid", main_authid},
   {"cd", main_cd},
   {"chroot", main_chroot},
   {"exec", main_exec},
