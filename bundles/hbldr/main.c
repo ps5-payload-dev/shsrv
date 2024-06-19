@@ -80,6 +80,12 @@ int sceSystemServiceLaunchApp(const char* title_id, char** argv,
 			      app_launch_ctx_t* ctx);
 
 
+/**
+ *
+ **/
+extern char** environ;
+
+
 __attribute__((constructor)) static void
 constructor(void) {
   if(sceUserServiceInitialize(0)) {
@@ -350,8 +356,14 @@ bigapp_launch(uint32_t user_id, char** argv) {
 static pid_t
 bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
   uint8_t int3instr = 0xcc;
+  char buf[PATH_MAX];
   intptr_t brkpoint;
   uint8_t orginstr;
+  char* cwd;
+
+  if(!(cwd=getenv("PWD"))) {
+    cwd = getcwd(buf, sizeof(buf));
+  }
 
   if(pt_attach(pid) < 0) {
     perror("pt_attach");
@@ -399,6 +411,9 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
   }
 
   bigapp_set_argv0(pid, progname);
+  elfldr_set_procname(pid, progname);
+  elfldr_set_environ(pid, environ);
+  elfldr_set_cwd(pid, cwd);
 
   // Execute the ELF
   if(elfldr_exec(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, pid, elf)) {

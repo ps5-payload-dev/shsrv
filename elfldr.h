@@ -30,3 +30,21 @@ pid_t elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
  **/
 int elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 		pid_t pid, uint8_t* elf);
+
+
+/**
+ * Set environmental variables in the given process.
+ **/
+int elfldr_set_environ(pid_t pid, char** envp);
+
+
+/**
+ * Set the current working directory.
+ **/
+int elfldr_set_cwd(pid_t pid, const char* cwd);
+
+
+/**
+ * Set the name of a process.
+ **/
+int elfldr_set_procname(pid_t pid, const char* name);
