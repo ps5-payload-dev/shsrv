@@ -346,6 +346,11 @@ bigapp_launch(uint32_t user_id, char** argv) {
 
   close(kq);
 
+  if(kill(pid, SIGSTOP) < 0) {
+    perror("kill");
+    return -1;
+  }
+
   return pid;
 }
 
