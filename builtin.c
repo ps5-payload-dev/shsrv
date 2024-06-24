@@ -392,6 +392,7 @@ static builtin_elf_map_t elf_map[] = {
   {"launch", launch_elf},
 
   {"hbldr", hbldr_elf},
+  {"hbdbg", hbldr_elf},
 };
 
 

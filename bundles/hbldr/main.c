@@ -359,7 +359,7 @@ bigapp_launch(uint32_t user_id, char** argv) {
  *
  **/
 static pid_t
-bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
+bigapp_replace(pid_t pid, uint8_t* elf, char* progname, intptr_t* baseaddr) {
   uint8_t int3instr = 0xcc;
   char buf[PATH_MAX];
   intptr_t brkpoint;
@@ -372,46 +372,35 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
 
   if(pt_attach(pid) < 0) {
     perror("pt_attach");
+    kill(pid, SIGKILL);
     return -1;
   }
 
   if(!(brkpoint=kernel_dynlib_entry_addr(pid, 0))) {
     puts("kernel_dynlib_entry_addr failed");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
   brkpoint += 58;// offset to invocation of main()
   if(mdbg_copyout(pid, brkpoint, &orginstr, sizeof(orginstr))) {
     perror("mdbg_copyout");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
   if(mdbg_copyin(pid, &int3instr, brkpoint, sizeof(int3instr))) {
     perror("mdbg_copyin");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
 
   // Continue execution until we hit the breakpoint, then remove it.
   if(pt_continue(pid, SIGCONT)) {
     perror("pt_continue");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
   if(waitpid(pid, 0, 0) == -1) {
     perror("waitpid");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
   if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
     perror("mdbg_copyin");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
 
@@ -421,27 +410,30 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname) {
   elfldr_set_cwd(pid, cwd);
 
   // Execute the ELF
-  if(elfldr_exec(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, pid, elf)) {
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+  if(elfldr_debug(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO,
+		  pid, elf, baseaddr)) {
     return -1;
   }
 
-  return pid;
+  return 0;
 }
 
 
 int
 main(int argc, char** argv) {
+  intptr_t baseaddr = 0;
   uint32_t user_id;
   uint8_t* elf;
   int app_id;
   pid_t pid;
+  int dbg;
 
   if(argc < 2) {
     puts("usage: %s <FILENAME>");
     return -1;
   }
+
+  dbg = !strcmp(argv[0], "hbdbg");
 
   if(!(elf=readfile(argv[1], 0))) {
     return -1;
@@ -476,6 +468,38 @@ main(int argc, char** argv) {
   kernel_set_proc_rootdir(pid, kernel_get_root_vnode());
   kernel_set_proc_jaildir(pid, 0);
 
-  return bigapp_replace(pid, elf, argv[1]);
-}
+  if(bigapp_replace(pid, elf, argv[1], &baseaddr)) {
+    pt_detach(pid, SIGKILL);
+    return -1;
+  }
 
+  if(dbg) {
+    if(kill(pid, SIGSTOP)) {
+      perror("kill");
+      pt_detach(pid, SIGKILL);
+      return -1;
+    }
+
+    puts("Process is waiting for a debugger.");
+    puts("Launch ps5-payload-gdbsrv and connect with gdb remotely as follows:");
+    puts("");
+
+    printf("export PS5_HOST=ps5\n");
+    printf("export HOMEBREW=%s\n", argv[1]);
+    printf("gdb \\\n");
+    printf("    -ex \"target extended-remote $PS5_HOST:2159\" \\\n");
+    printf("    -ex \"attach %d\" \\\n", pid);
+    printf("    -ex \"add-symbol-file $HOMEBREW -readnow -o 0x%lx\"\n", baseaddr);
+
+    puts("");
+    puts("Replace HOMEBREW with the local path to the homebrew ELF file");
+  }
+
+  if(pt_detach(pid, 0)) {
+    kill(pid, SIGKILL);
+    perror("pt_detach");
+    return -1;
+  }
+
+  return 0;
+}

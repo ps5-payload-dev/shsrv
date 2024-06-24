@@ -184,7 +184,7 @@ pt_reload(elfldr_ctx_t *ctx, Elf64_Phdr *phdr) {
  * Load an ELF into the address space of a process with the given pid.
  **/
 static intptr_t
-elfldr_load(pid_t pid, uint8_t *elf) {
+elfldr_load(pid_t pid, uint8_t *elf, intptr_t *baseaddr) {
   Elf64_Ehdr *ehdr = (Elf64_Ehdr*)elf;
   Elf64_Phdr *phdr = (Elf64_Phdr*)(elf + ehdr->e_phoff);
   Elf64_Shdr *shdr = (Elf64_Shdr*)(elf + ehdr->e_shoff);
@@ -300,6 +300,10 @@ elfldr_load(pid_t pid, uint8_t *elf) {
   if(error) {
     pt_munmap(pid, ctx.base_addr, ctx.base_size);
     return 0;
+  }
+
+  if(baseaddr) {
+    *baseaddr = ctx.base_addr;
   }
 
   return ctx.base_addr + ehdr->e_entry;
@@ -466,7 +470,7 @@ elfldr_payload_args(pid_t pid) {
  * Prepare registers of a process for execution of an ELF.
  **/
 static int
-elfldr_prepare_exec(pid_t pid, uint8_t *elf) {
+elfldr_prepare_exec(pid_t pid, uint8_t *elf, intptr_t *baseaddr) {
   uint8_t call_rax[] = {0xff, 0xd0};
   intptr_t entry;
   intptr_t args;
@@ -477,7 +481,7 @@ elfldr_prepare_exec(pid_t pid, uint8_t *elf) {
     return -1;
   }
 
-  if(!(entry=elfldr_load(pid, elf))) {
+  if(!(entry=elfldr_load(pid, elf, baseaddr))) {
     puts("elfldr_load failed");
     return -1;
   }
@@ -489,8 +493,6 @@ elfldr_prepare_exec(pid_t pid, uint8_t *elf) {
 
   if(mdbg_copyin(pid, call_rax, r.r_rip, sizeof(call_rax))) {
     perror("mdbg_copyin");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
     return -1;
   }
 
@@ -552,8 +554,8 @@ elfldr_set_procname(pid_t pid, const char* name) {
 
 
 int
-elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
-	    pid_t pid, uint8_t* elf) {
+elfldr_debug(int stdin_fd, int stdout_fd, int stderr_fd,
+	     pid_t pid, uint8_t* elf, intptr_t* baseaddr) {
   uint8_t privcaps[16] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
                           0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
   uint8_t orgcaps[16];
@@ -561,12 +563,10 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 
   if(kernel_get_ucred_caps(pid, orgcaps)) {
     puts("kernel_get_ucred_caps failed");
-    pt_detach(pid);
     return -1;
   }
   if(kernel_set_ucred_caps(pid, privcaps)) {
     puts("kernel_set_ucred_caps failed");
-    pt_detach(pid);
     return -1;
   }
 
@@ -589,7 +589,7 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
     pt_close(pid, stderr_fd);
   }
 
-  if(elfldr_prepare_exec(pid, elf)) {
+  if(elfldr_prepare_exec(pid, elf, baseaddr)) {
     error = -1;
   }
 
@@ -598,12 +598,25 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
     error = -1;
   }
 
-  if(pt_detach(pid)) {
-    perror("pt_detach");
-    error = -1;
+  return error;
+}
+
+
+int
+elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
+	    pid_t pid, uint8_t* elf) {
+  if(elfldr_debug(stdin_fd, stdout_fd, stderr_fd, pid, elf, 0)) {
+    pt_detach(pid, SIGKILL);
+    return -1;
   }
 
-  return error;
+  if(pt_detach(pid, 0)) {
+    perror("pt_detach");
+    kill(pid, SIGKILL);
+    return -1;
+  }
+
+  return 0;
 }
 
 
@@ -680,8 +693,7 @@ elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
   // via sceKernelGetProcParam()
   if(pt_syscall(pid, 599)) {
     puts("sys_dynlib_process_needed_and_relocate failed");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
 
@@ -691,41 +703,35 @@ elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
   //Insert a breakpoint at the eboot entry.
   if(!(brkpoint=kernel_dynlib_entry_addr(pid, 0))) {
     puts("kernel_dynlib_entry_addr failed");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
   brkpoint += 58;// offset to invocation of main()
   if(mdbg_copyout(pid, brkpoint, &orginstr, sizeof(orginstr))) {
     perror("mdbg_copyout");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
   if(mdbg_copyin(pid, &int3instr, brkpoint, sizeof(int3instr))) {
     perror("mdbg_copyin");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
 
   // Continue execution until we hit the breakpoint, then remove it.
   if(pt_continue(pid, SIGCONT)) {
     perror("pt_continue");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
   if(waitpid(pid, 0, 0) == -1) {
     perror("waitpid");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
   if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
     perror("mdbg_copyin");
-    kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, SIGKILL);
     return -1;
   }
 
@@ -739,7 +745,6 @@ elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
   elfldr_set_cwd(pid, cwd);
 
   if(elfldr_exec(stdin_fd, stdout_fd, stderr_fd, pid, elf)) {
-    kill(pid, SIGKILL);
     return -1;
   }
 

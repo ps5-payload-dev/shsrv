@@ -18,6 +18,7 @@ along with this program; see the file COPYING. If not, see
 
 #include <unistd.h>
 
+
 /**
  * Spawn a new process.
  **/
@@ -30,6 +31,14 @@ pid_t elfldr_spawn(int stdin_fd, int stdout_fd, int stderr_fd,
  **/
 int elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 		pid_t pid, uint8_t* elf);
+
+
+/**
+ * Execute an ELF inside the process with the given pid,
+ * but leave the process in the STOP state.
+ **/
+int elfldr_debug(int stdin_fd, int stdout_fd, int stderr_fd,
+		 pid_t pid, uint8_t *elf, intptr_t *baseaddr);
 
 
 /**
