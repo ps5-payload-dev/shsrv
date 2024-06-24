@@ -38,7 +38,6 @@ sys_ptrace(int request, pid_t pid, caddr_t addr, int data) {
   pid_t mypid = getpid();
   uint8_t caps[16];
   uint64_t authid;
-  int ret;
 
   if(!(authid=kernel_get_ucred_authid(mypid))) {
     return -1;
@@ -54,7 +53,7 @@ sys_ptrace(int request, pid_t pid, caddr_t addr, int data) {
     return -1;
   }
 
-  ret = (int)syscall(SYS_ptrace, request, pid, addr, data);
+  errno = (int)syscall(SYS_ptrace, request, pid, addr, data);
 
   if(kernel_set_ucred_authid(mypid, authid)) {
     return -1;
@@ -63,7 +62,7 @@ sys_ptrace(int request, pid_t pid, caddr_t addr, int data) {
     return -1;
   }
 
-  return ret;
+  return errno;
 }
 
 
