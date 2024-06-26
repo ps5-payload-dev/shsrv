@@ -409,6 +409,8 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname, intptr_t* baseaddr) {
   elfldr_set_environ(pid, environ);
   elfldr_set_cwd(pid, cwd);
 
+  pt_signal(pid, SIGSEGV, (intptr_t)SIG_IGN);
+
   // Execute the ELF
   if(elfldr_debug(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO,
 		  pid, elf, baseaddr)) {

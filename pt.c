@@ -336,6 +336,13 @@ pt_pipe(pid_t pid, intptr_t pipefd) {
 }
 
 
+int
+pt_signal(pid_t pid, int signum, intptr_t handler) {
+  intptr_t faddr = pt_resolve(pid, "VADc3MNQ3cM");
+  return (int)pt_call(pid, faddr, signum, handler);
+}
+
+
 void
 pt_perror(pid_t pid, const char *s) {
   intptr_t faddr = pt_resolve(pid, "9BcDykPmo1I");
