@@ -57,3 +57,9 @@ int elfldr_set_cwd(pid_t pid, const char* cwd);
  * Set the name of a process.
  **/
 int elfldr_set_procname(pid_t pid, const char* name);
+
+
+/**
+ * Set the heap size for libc.
+ **/
+int elfldr_set_heap_size(pid_t pid, ssize_t size);

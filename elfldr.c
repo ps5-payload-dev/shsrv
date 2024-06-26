@@ -623,7 +623,7 @@ elfldr_exec(int stdin_fd, int stdout_fd, int stderr_fd,
 /**
  * Set the heap size for libc.
  **/
-static int
+int
 elfldr_set_heap_size(pid_t pid, ssize_t size) {
   intptr_t sceLibcHeapSize;
   intptr_t sceLibcParam;
