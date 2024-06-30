@@ -72,7 +72,7 @@ ps_main(int argc, char** argv) {
   }
 
   printf("     PID      PPID     PGID      SID      UID           AuthId"
-	 "    State     AppId    TitleId  Command\n");
+	 "    State    TRACER   AppId    TitleId  Command\n");
   for(void *ptr=buf; ptr<(buf+buf_size);) {
     struct kinfo_proc *ki = (struct kinfo_proc*)ptr;
     ptr += ki->ki_structsize;
@@ -81,11 +81,11 @@ ps_main(int argc, char** argv) {
       memset(&appinfo, 0, sizeof(appinfo));
     }
 
-    printf("%8u  %8u %8u %8u %8u %016lx    %5s  %08x  %9s  %s\n",
+    printf("%8u  %8u %8u %8u %8u %016lx    %5s  %8u %08x  %9s  %s\n",
 	   ki->ki_pid, ki->ki_ppid, ki->ki_pgid, ki->ki_sid,
 	   ki->ki_uid, kernel_get_ucred_authid(ki->ki_pid),
-	   state_abbrev[(int)ki->ki_stat], appinfo.app_id,
-	   appinfo.title_id, ki->ki_comm);
+	   state_abbrev[(int)ki->ki_stat], ki->ki_tracer,
+	   appinfo.app_id, appinfo.title_id, ki->ki_comm);
   }
 
   free(buf);
