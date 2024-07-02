@@ -526,7 +526,7 @@ elfldr_set_cwd(pid_t pid, const char* cwd) {
   }
 
   mdbg_copyin(pid, cwd, buf, strlen(cwd)+1);
-  pt_syscall(pid, SYS_chdir, -1, buf);
+  pt_syscall(pid, SYS_chdir, buf);
   pt_msync(pid, buf, PAGE_SIZE, MS_SYNC);
   pt_munmap(pid, buf, PAGE_SIZE);
 
