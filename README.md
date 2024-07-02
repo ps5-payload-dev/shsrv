@@ -36,6 +36,16 @@ You can also run your own paylaods by placing them in a folder included in the
 PATH enviroment variable, which is initialized to /data/hbroot/bin and
 /mnt/usb0/hbroot/bin
 
+To run payloads that use audio or video, you can use the hbldr command, e.g.,
+```console
+/$ hbldr /data/ffplay.elf /data/clip.mp4
+```
+
+Also, if you wan't to debug such homebrew with gdb, you can launch them as follows:
+```console
+/$ hbdbg /data/ffplay.elf /data/clip.mp4
+```
+
 ## Building
 Assuming you have the [ps5-payload-sdk][sdk] installed on a Debian-flavored
 operating system, the payload can be compiled using the following commands:
