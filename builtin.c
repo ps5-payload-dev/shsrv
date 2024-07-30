@@ -298,23 +298,6 @@ main_exec(int argc, char** argv) {
 }
 
 
-/**
- * 
- **/
-static int
-main_sleep(int argc, char **argv) {
-  if(argc <= 1) {
-    fprintf(stderr, "%s: missing operand\n", argv[0]);
-    return -1;
-  }
-
-  unsigned int seconds = atoi(argv[1]);
-  sleep(seconds);
-
-  return 0;
-}
-
-
 static int
 main_authid(int argc, char **argv) {
   pid_t pid = getpid();
@@ -345,7 +328,6 @@ static builtin_cmd_map_t cmd_map[] = {
   {"exit", main_exit},
   {"export", main_export},
   {"help", main_help},
-  {"sleep", main_sleep},
 };
 
 
@@ -380,6 +362,7 @@ static builtin_elf_map_t elf_map[] = {
   {"rmdir", core_elf},
   {"sfocreate", core_elf},
   {"sfoinfo", core_elf},
+  {"sleep", core_elf},
   {"stat", core_elf},
   {"sum", core_elf},
   {"sync", core_elf},
