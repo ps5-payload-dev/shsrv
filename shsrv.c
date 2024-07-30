@@ -18,6 +18,7 @@ along with this program; see the file COPYING. If not, see
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -47,6 +48,7 @@ serve_sh(uint16_t port) {
   struct ifaddrs *ifaddr;
   int ifaddr_wait = 1;
   socklen_t addr_len;
+  int optval;
   int connfd;
   int srvfd;
 
@@ -118,7 +120,22 @@ serve_sh(uint16_t port) {
       klog_perror("accept");
       break;
     }
-    elfldr_spawn(connfd, connfd, connfd, sh_elf, argv);
+
+    optval = 1;
+    if(setsockopt(connfd, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval,
+		  sizeof (optval))) {
+      klog_perror("setsockopt");
+      break;
+    }
+
+    optval = 1;
+    if(setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, (char *)&optval,
+		  sizeof (optval))) {
+      klog_perror("setsockopt");
+      break;
+    }
+
+    elfldr_spawn(connfd, connfd, -1, sh_elf, argv);
     close(connfd);
   }
 

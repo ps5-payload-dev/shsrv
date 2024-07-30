@@ -15,6 +15,8 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <errno.h>
+#include <poll.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,8 +26,12 @@ along with this program; see the file COPYING. If not, see
 
 #include <sys/wait.h>
 
+#include <ps5/klog.h>
+
 #include "builtin.h"
 #include "elfldr.h"
+
+#include "libtelnet.h"
 
 
 #define SHELL_LINE_BUFSIZE 1024
@@ -40,6 +46,20 @@ typedef struct sce_version {
   unsigned int  bin_version;
   unsigned long unknown2;
 } sce_version_t;
+
+
+typedef struct telnet_client_state {
+  telnet_t *telnet;
+  int remote_fd;
+  int stdin_write_fd;
+  int stdout_read_fd;
+  pid_t pid;
+} telnet_client_state_t;
+
+
+static const telnet_telopt_t telopts[] = {
+  {-1, 0, 0}
+};
 
 
 int  sceKernelSetProcessName(const char*);
@@ -149,20 +169,25 @@ sh_waitpid(pid_t pid) {
   int status;
   pid_t res;
 
-  while(1) {
-    if((res=waitpid(pid, &status, WNOHANG)) < 0) {
-      return -1;
-
-    } else if(!res) {
-      usleep(1000);
-      continue;
-
-    } else if(WIFEXITED(status)) {
-      return WEXITSTATUS(status);
-    } else {
-      return -1;
-    }
+  if((res=waitpid(pid, &status, WUNTRACED)) < 0) {
+    perror("waitpid");
+    return -1;
   }
+
+  if(WIFEXITED(status)) {
+    return WEXITSTATUS(status);
+  }
+
+  if(WIFSIGNALED(status)) {
+    printf("Terminated by signal %d\n", WTERMSIG(status));
+    return -1;
+  }
+
+  if(WIFSTOPPED(status)) {
+    printf("Stopped by signal %d\n", WSTOPSIG(status));
+  }
+
+  return -1;
 }
 
 
@@ -253,7 +278,7 @@ sh_readfile(const char* path) {
 /**
  * Execute a shell command.
  **/
-static int
+static pid_t
 sh_execute(char **argv) {
   char path[PATH_MAX];
   builtin_cmd_t *cmd;
@@ -270,7 +295,8 @@ sh_execute(char **argv) {
   }
 
   if((cmd=builtin_find_cmd(argv[0]))) {
-    return cmd(argc, argv);
+    cmd(argc, argv);
+    return 0;
   }
 
   if(!sh_which(argv[0], path) && (elf=sh_readfile(path))) {
@@ -282,13 +308,13 @@ sh_execute(char **argv) {
   }
 
   if(pid < 0) {
-    return EXIT_FAILURE;
+    return -1;
   } else if(pid == 0) {
     fprintf(stderr, "%s: command not found\n", argv[0]);
-    return EXIT_FAILURE;
+    return -1;
   }
 
-  return sh_waitpid(pid);
+  return pid;
 }
 
 
@@ -361,16 +387,16 @@ sh_greet(void) {
 }
 
 
-/**
- * Launch sh.elf.
- **/
-int main(int argc, char** argv) {
+static void*
+sh_thread(void *ctx) {
+  telnet_client_state_t *state = (telnet_client_state_t*)ctx;
   int pipefd[2] = {-1, -1};
   char *line = NULL;
   char **cmds = NULL;
   char **args = NULL;
   int infd = 0;
   int outfd = 1;
+  pid_t pid;
 
   chdir("/");
   setenv("HOME", "/", 0);
@@ -383,7 +409,7 @@ int main(int argc, char** argv) {
     sh_prompt();
 
     if(!(line=sh_readline())) {
-      return 0;
+      exit(0);
     }
 
     if(!(cmds=sh_splitstring(line, SHELL_CMD_DELIM))) {
@@ -406,7 +432,11 @@ int main(int argc, char** argv) {
 	dup2(outfd, 1);
       }
 
-      sh_execute(args);
+      if((pid=sh_execute(args)) > 0) {
+	state->pid = pid;
+	sh_waitpid(pid);
+	state->pid = -1;
+      }
 
       if(cmds[i+1]) {
 	dup2(pipefd[0], 0);
@@ -425,5 +455,198 @@ int main(int argc, char** argv) {
     close(outfd);
   }
 
-  return 0;
+  exit(0);
+}
+
+
+static void
+sh_on_telnet_data(telnet_client_state_t *state, telnet_event_t *ev) {
+  if(write(state->stdin_write_fd, ev->data.buffer, ev->data.size)
+     != ev->data.size) {
+    klog_perror("TELNET_EV_DATA");
+  }
+}
+
+static void
+sh_on_telnet_send(telnet_client_state_t *state, telnet_event_t *ev) {
+  if(write(state->remote_fd, ev->data.buffer, ev->data.size)
+     != ev->data.size) {
+    klog_perror("TELNET_EV_SEND");
+  }
+}
+
+static void
+sh_on_telnet_iac(telnet_client_state_t *state, telnet_event_t *ev) {
+  switch(ev->iac.cmd) {
+  case TELNET_SUSP:
+    if(state->pid > 0) {
+      kill(state->pid, SIGSTOP);
+    }
+    break;
+
+  case TELNET_IP:
+    if(state->pid > 0) {
+      // When SIGINT is sent to a prospero process, it is stopped instead
+      // of terminated, casuing zombie procs. For now, send SIGKILL instead.
+      kill(state->pid, SIGKILL);
+      //kill(state->pid, SIGINT);
+    }
+    break;
+
+  case TELNET_ABORT:
+    if(state->pid > 0) {
+      kill(state->pid, SIGABRT);
+    }
+    break;
+
+  case TELNET_AO: // Abort output (but continue running)
+    break;
+
+  case TELNET_EC: // Erase char
+    break;
+
+  case TELNET_EL: // Erase line
+    break;
+
+  case TELNET_AYT: //Are You There
+    break;
+
+  default:
+    klog_printf("Unknown telnet command %d received\n", ev->iac.cmd);
+    break;
+  }
+}
+
+static void
+sh_telnet_evt(telnet_t *telnet, telnet_event_t *ev, void *ctx) {
+  telnet_client_state_t *state = (telnet_client_state_t*)ctx;
+
+  switch(ev->type) {
+  case TELNET_EV_DATA:
+    sh_on_telnet_data(state, ev);
+    break;
+
+  case TELNET_EV_SEND:
+    sh_on_telnet_send(state, ev);
+    break;
+
+  case TELNET_EV_IAC:
+    sh_on_telnet_iac(state, ev);
+    break;
+
+  case TELNET_EV_WARNING:
+    klog_printf("TELNET_EV_WARNING: %s:%s::%d: %s (error %d)",
+		ev->error.file, ev->error.func, ev->error.line,
+		ev->error.msg, ev->error.errcode);
+    break;
+
+  case TELNET_EV_ERROR:
+    klog_printf("TELNET_EV_ERROR: %s:%s::%d: %s (error %d)",
+		ev->error.file, ev->error.func, ev->error.line,
+		ev->error.msg, ev->error.errcode);
+    break;
+
+  default:
+    klog_printf("Unkown telnet event %d\n", ev->type);
+    break;
+  }
+}
+
+
+/**
+ * Launch sh.elf.
+ **/
+int main(int argc, char** argv) {
+  telnet_client_state_t state;
+  struct pollfd pollfds[2];
+  char buf[0x1000];
+  int pipefds[2];
+  pthread_t trd;
+  ssize_t len;
+
+  setsid();
+
+  // remote socket is duplicated on stdin, stdout, and stderr
+  state.remote_fd = dup(STDIN_FILENO);
+
+  if(!(state.telnet=telnet_init(telopts, sh_telnet_evt, TELNET_FLAG_NVT_EOL,
+				&state))) {
+    klog_perror("telnet_init");
+    exit(errno);
+  }
+
+  // create a pipe for stdin so we can intercept its data and signal
+  // the telnet state machine
+  if(pipe(pipefds) < 0) {
+    klog_perror("pipe");
+    exit(errno);
+  }
+  if(dup2(pipefds[0], STDIN_FILENO) < 0) {
+    klog_perror("dup2");
+    exit(errno);
+  }
+  state.stdin_write_fd = pipefds[1];
+
+  // do the same for staout and stderr
+  if(pipe(pipefds)) {
+    klog_perror("pipe");
+    exit(errno);
+  }
+  state.stdout_read_fd = pipefds[0];
+  if(dup2(pipefds[1], STDOUT_FILENO) < 0) {
+    klog_perror("dup2");
+    exit(errno);
+  }
+  setvbuf(stdout, NULL, _IONBF, 0); // no buffering
+  if(dup2(pipefds[1], STDERR_FILENO) < 0) {
+    klog_perror("dup2");
+    exit(errno);
+  }
+  setvbuf(stderr, NULL, _IONBF, 0); // no buffering
+
+  // run shell in its own thread
+  pthread_create(&trd, NULL, sh_thread, &state);
+
+  // setup poll arguments
+  memset(pollfds, 0, sizeof(pollfds));
+  pollfds[0].fd = state.remote_fd;
+  pollfds[0].events = POLLIN;
+  pollfds[1].fd = state.stdout_read_fd;
+  pollfds[1].events = POLLIN;
+
+  // generate telnet events
+  while(1) {
+    if(poll(pollfds, 2, 1) < 0) {
+      klog_perror("poll");
+      exit(errno);
+    }
+
+    if(pollfds[0].revents & (POLLERR | POLLHUP) ||
+       pollfds[1].revents & (POLLERR | POLLHUP)) {
+      klog_perror("poll");
+      exit(errno);
+    }
+
+    if(pollfds[0].revents & POLLIN) {
+      if((len=read(pollfds[0].fd, buf, sizeof(buf))) <= 0) {
+	if(len) {
+	  klog_perror("read");
+	}
+	exit(errno);
+      }
+      telnet_recv(state.telnet, buf, len);
+    }
+    if(pollfds[1].revents & POLLIN) {
+      if((len=read(pollfds[1].fd, buf, sizeof(buf))) <= 0) {
+	if(len) {
+	  klog_perror("read");
+	}
+	exit(errno);
+      }
+      telnet_send_text(state.telnet, buf, len);
+    }
+  }
+
+  telnet_free(state.telnet);
+  exit(0);
 }

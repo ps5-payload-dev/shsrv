@@ -47,7 +47,7 @@ builtin.o: bundles/core/core.elf.inc bundles/http2_get/http2_get.elf.inc \
 shsrv.elf: shsrv.o elfldr.o pt.o
 	$(CC) -lkernel_sys -o $@ $^
 
-sh.elf: sh.o builtin.o elfldr.o pt.o
+sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
 	$(CC) -lkernel_sys -o $@ $^
 
 sh.elf.inc: sh.elf
