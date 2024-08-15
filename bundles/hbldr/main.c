@@ -450,8 +450,85 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname, intptr_t* baseaddr) {
 }
 
 
+/**
+ * Split a string into an array of substrings seperated by
+ * a delimiter.
+ **/
+static char**
+splitstring(char *line, char *delim) {
+  int bufsize = 1024;
+  int position = 0;
+  char **tokens = calloc(bufsize, sizeof(char));
+  char *token, **tokens_backup;
+  char *state = 0;
+
+  if(!tokens) {
+    perror("calloc");
+    return NULL;
+  }
+
+  token = strtok_r(line, delim, &state);
+  while(token != NULL) {
+    tokens[position] = token;
+    position++;
+
+    if(position >= bufsize) {
+      bufsize += 1024;
+      tokens_backup = tokens;
+      tokens = realloc(tokens, bufsize * sizeof(char*));
+      if(!tokens) {
+	perror("realloc");
+	free(tokens_backup);
+	return NULL;
+      }
+    }
+
+    token = strtok_r(NULL, delim, &state);
+  }
+
+  tokens[position] = NULL;
+  return tokens;
+}
+
+
+/**
+ * Search the env varriable PATH for a file with the given name.
+ **/
+static int
+which(const char* name, char* path) {
+  char **paths = NULL;
+  char* PATH;
+
+  if(name[0] == '/' && !access(name, R_OK | X_OK)) {
+    strcpy(path, name);
+    return 0;
+  }
+
+  PATH = strdup(getenv("PATH"));
+  if(!(paths=splitstring(PATH, ":"))) {
+    free(PATH);
+    return 0;
+  }
+
+  for(int i=0; paths[i]; i++) {
+    sprintf(path, "%s/%s", paths[i], name);
+    if(!access(path, R_OK | X_OK)) {
+      free(paths);
+      free(PATH);
+      return 0;
+    }
+  }
+
+  free(paths);
+  free(PATH);
+
+  return -1;
+}
+
+
 int
 main(int argc, char** argv) {
+  char filename[PATH_MAX];
   intptr_t baseaddr = 0;
   uint32_t user_id;
   uint8_t* elf;
@@ -466,7 +543,12 @@ main(int argc, char** argv) {
 
   dbg = !strcmp(argv[0], "hbdbg");
 
-  if(!(elf=readfile(argv[1], 0))) {
+  if(which(argv[1], filename)) {
+      printf("%s: command not found\n", argv[1]);
+      return -1;
+  }
+
+  if(!(elf=readfile(filename, 0))) {
     return -1;
   }
 
