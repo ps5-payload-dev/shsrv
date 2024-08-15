@@ -121,7 +121,7 @@ sh_readline(void) {
 
 
 /**
- * Split a string into an array of substrings seperated by 
+ * Split a string into an array of substrings seperated by
  * a delimiter.
  **/
 static char**
@@ -131,7 +131,7 @@ sh_splitstring(char *line, char *delim) {
   char **tokens = calloc(bufsize, sizeof(char));
   char *token, **tokens_backup;
   char *state = 0;
-  
+
   if(!tokens) {
     perror("calloc");
     return NULL;
@@ -152,7 +152,7 @@ sh_splitstring(char *line, char *delim) {
 	return NULL;
       }
     }
-    
+
     token = strtok_r(NULL, delim, &state);
   }
 
