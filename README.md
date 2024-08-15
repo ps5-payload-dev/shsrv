@@ -33,17 +33,17 @@ get a list of running processes:
 ```
 
 You can also run your own paylaods by placing them in a folder included in the
-PATH enviroment variable, which is initialized to /data/hbroot/bin and
-/mnt/usb0/hbroot/bin
+PATH enviroment variable, which is initialized to /user/homebrew/bin and
+/mnt/usb0/homebrew/bin
 
 To run payloads that use audio or video, you can use the hbldr command, e.g.,
 ```console
-/$ hbldr /data/ffplay.elf /data/clip.mp4
+/$ hbldr ffplay /data/clip.mp4
 ```
 
 Also, if you wan't to debug such homebrew with gdb, you can launch them as follows:
 ```console
-/$ hbdbg /data/ffplay.elf /data/clip.mp4
+/$ hbdbg ffplay /data/clip.mp4
 ```
 
 ## Building
@@ -56,10 +56,10 @@ john@localhost:ps5-payload-dev/shsrv$ make
 ```
 
 ## Limitations
-The login session is not attached to a TTY, so you cannot signal for, e.g., SIGINT
-with Ctrl+C. Furthermore, most of the commands are only partially implemneted.
-If you find some limitation extra anoying, file a github issue and perhaps it will
-be addressed.
+The login session is not attached to a TTY, so you cannot run homebrew that alters
+terminal properties like window size etc. Furthermore, most of the commands are only
+partially implemented. If you find some limitation extra anoying, file a github issue
+and perhaps it will be addressed.
 
 ## Reporting Bugs
 If you encounter problems with ps5-payload-shsrv, please [file a github issue][issues].
