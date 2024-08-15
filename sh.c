@@ -401,7 +401,7 @@ sh_thread(void *ctx) {
   chdir("/");
   setenv("HOME", "/", 0);
   setenv("PWD", "/", 0);
-  setenv("PATH", "/mnt/usb0/hbroot/bin:/data/hbroot/bin", 0);
+  setenv("PATH", "/mnt/usb0/homebrew/bin:/user/homebrew/bin", 0);
 
   sh_greet();
 
