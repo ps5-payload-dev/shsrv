@@ -6,13 +6,13 @@ commands, e.g., cd, mkdir, stat, and the abillity to run payloads stored on
 the PS5 filesystem.
 
 ## Quick-start
-To deploy ps5-payload-shsrv, first launch the [ps5-payload-elfldr][elfldr], then
-load the payload and connect using a telnet client by issuing the following
-commands:
+To deploy ps5-payload-shsrv, first make sure [ps5-payload-elfldr][elfldr] is
+running, then load the payload and connect using a telnet client by issuing
+the following commands:
 
 ```console
 john@localhost:~$ export PS5_HOST=ps5
-john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.10/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
+john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.10.1/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
 john@localhost:~$ telnet $PS5_HOST 2323
 ```
 
