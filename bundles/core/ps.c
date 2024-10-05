@@ -28,6 +28,9 @@ along with this program; see the file COPYING. If not, see
 #include "_common.h"
 
 
+#define MiB(x) ((x) / (1024.0 * 1024))
+
+
 typedef struct app_info {
   uint32_t app_id;
   uint64_t unknown1;
@@ -72,7 +75,7 @@ ps_main(int argc, char** argv) {
   }
 
   printf("     PID      PPID     PGID      SID      UID           AuthId"
-	 "    State    TRACER   AppId    TitleId  Command\n");
+         "      State  AppId    TitleId     Memory (MiB)  Command\n");
   for(void *ptr=buf; ptr<(buf+buf_size);) {
     struct kinfo_proc *ki = (struct kinfo_proc*)ptr;
     ptr += ki->ki_structsize;
@@ -81,11 +84,12 @@ ps_main(int argc, char** argv) {
       memset(&appinfo, 0, sizeof(appinfo));
     }
 
-    printf("%8u  %8u %8u %8u %8u %016lx    %5s  %8u %08x  %9s  %s\n",
+    printf("%8u  %8u %8u %8u %8u %016lx %10s   %04x  %9s  %6.1f / %6.1f  %s\n",
 	   ki->ki_pid, ki->ki_ppid, ki->ki_pgid, ki->ki_sid,
 	   ki->ki_uid, kernel_get_ucred_authid(ki->ki_pid),
-	   state_abbrev[(int)ki->ki_stat], ki->ki_tracer,
-	   appinfo.app_id, appinfo.title_id, ki->ki_comm);
+           state_abbrev[(int)ki->ki_stat], appinfo.app_id,
+	   appinfo.title_id, MiB(ki->ki_rssize * PAGE_SIZE),
+           MiB(ki->ki_size), ki->ki_comm);
   }
 
   free(buf);
