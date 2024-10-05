@@ -309,8 +309,13 @@ bigapp_set_argv0(pid_t pid, const char* argv0) {
 static void*
 bigapp_launch_thread(void* args) {
   app_launch_ctx_t *ctx  = (app_launch_ctx_t *)args;
+  const char *titleid = getenv("HBLDR_TITLEID");
 
-  sceSystemServiceLaunchApp("FAKE00000", ctx->argv, ctx);
+  if(!titleid) {
+      titleid = "FAKE00000";
+  }
+
+  sceSystemServiceLaunchApp(titleid, ctx->argv, ctx);
 
   return 0;
 }
