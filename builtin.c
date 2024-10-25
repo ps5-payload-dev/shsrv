@@ -32,6 +32,7 @@ along with this program; see the file COPYING. If not, see
 #include "bundles/http2_get/http2_get.elf.inc"
 #include "bundles/launch/launch.elf.inc"
 #include "bundles/hbldr/hbldr.elf.inc"
+#include "bundles/sleepmode/sleepmode.elf.inc"
 
 
 #define ispathsep(ch) ((ch) == '/' || (ch) == '\\')
@@ -376,6 +377,8 @@ static builtin_elf_map_t elf_map[] = {
 
   {"hbldr", hbldr_elf},
   {"hbdbg", hbldr_elf},
+
+  {"sleepmode", sleepmode_elf},
 };
 
 
