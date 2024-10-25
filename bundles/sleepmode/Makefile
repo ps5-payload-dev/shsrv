@@ -14,9 +14,6 @@
 # along with this program; see the file COPYING. If not see
 # <http://www.gnu.org/licenses/>.
 
-PS5_HOST ?= ps5
-PS5_PORT ?= 9021
-
 ifdef PS5_PAYLOAD_SDK
     include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
 else
@@ -24,39 +21,17 @@ else
 endif
 
 CFLAGS := -Wall -Werror
+LDADD  := -lSceSystemService
 
-SUBDIRS := bundles/core bundles/http2_get bundles/launch bundles/hbldr \
-           bundles/sleepmode
+all: sleepmode.elf.inc
 
-TOPTARGETS := all clean
-
-$(TOPTARGETS): $(SUBDIRS)
-
-$(SUBDIRS):
-	make -C $@ $(MAKECMDGOALS)
-
-.PHONY: $(TOPTARGETS) $(SUBDIRS)
-
-
-all: shsrv.elf sh.elf
-
-shsrv.o: sh.elf.inc
-
-builtin.o: bundles/core/core.elf.inc bundles/http2_get/http2_get.elf.inc \
-           bundles/launch/launch.elf.inc bundles/hbldr/hbldr.elf.inc 
-
-shsrv.elf: shsrv.o elfldr.o pt.o
-	$(CC) -lkernel_sys -o $@ $^
-
-sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
-	$(CC) -lkernel_sys -o $@ $^
-
-sh.elf.inc: sh.elf
+sleepmode.elf.inc: sleepmode.elf
 	xxd -i $^ > $@
 
+sleepmode.elf: main.o
+	$(CC) $(LDADD) -o $@ $^
+
 clean:
-	rm -f *.o *.elf
+	rm -f *.o *.elf *.elf.inc
 
-test: shsrv.elf
-	$(PS5_DEPLOY) -h $(PS5_HOST) -p $(PS5_PORT) $^
-
+test:
