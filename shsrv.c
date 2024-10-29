@@ -33,6 +33,7 @@ along with this program; see the file COPYING. If not, see
 #include <ps5/klog.h>
 
 #include "elfldr.h"
+#include "notify.h"
 #include "sh.elf.inc"
 
 
@@ -40,9 +41,10 @@ along with this program; see the file COPYING. If not, see
  * Serve access to sh.elf.
  **/
 static int
-serve_sh(uint16_t port) {
+serve_sh(uint16_t port, int notify_user) {
   struct sockaddr_in server_addr;
   struct sockaddr_in client_addr;
+
   char ip[INET_ADDRSTRLEN];
   char* argv[] = {"sh", 0};
   struct ifaddrs *ifaddr;
@@ -80,6 +82,9 @@ serve_sh(uint16_t port) {
       continue;
     }
     ifaddr_wait = 0;
+    if(notify_user) {
+      notify("Serving shell on %s:%d (%s)", ip, port, ifa->ifa_name);
+    }
     klog_printf("Serving shell on %s:%d (%s)\n", ip, port, ifa->ifa_name);
   }
 
@@ -210,6 +215,7 @@ init_stdio(void) {
  **/
 int
 main(void) {
+  int notify_user = 1;
   int port = 2323;
   pid_t pid;
 
@@ -227,7 +233,8 @@ main(void) {
 
   signal(SIGCHLD, SIG_IGN);
   while(1) {
-    serve_sh(port);
+    serve_sh(port, notify_user);
+    notify_user = 0;
     sleep(3);
   }
 
