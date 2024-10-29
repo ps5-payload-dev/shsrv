@@ -12,7 +12,7 @@ the following commands:
 
 ```console
 john@localhost:~$ export PS5_HOST=ps5
-john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.10.1/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
+john@localhost:~$ wget -q -O - https://github.com/ps5-payload-dev/shsrv/releases/download/v0.12/Payload.zip | gunzip -c -d | nc -q0 $PS5_HOST 9021
 john@localhost:~$ telnet $PS5_HOST 2323
 ```
 
