@@ -359,6 +359,7 @@ static builtin_elf_map_t elf_map[] = {
   {"notify", core_elf},
   {"ps", core_elf},
   {"pwd", core_elf},
+  {"reptyr", core_elf},
   {"rm", core_elf},
   {"rmdir", core_elf},
   {"sfocreate", core_elf},
