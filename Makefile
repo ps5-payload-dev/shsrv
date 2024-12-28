@@ -33,7 +33,7 @@ TOPTARGETS := all clean
 $(TOPTARGETS): $(SUBDIRS)
 
 $(SUBDIRS):
-	make -C $@ $(MAKECMDGOALS)
+	make -j1 -C $@ $(MAKECMDGOALS)
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
