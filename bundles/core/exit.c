@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 John Törnblom
+/* Copyright (C) 2025 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -14,30 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
-#include <stdio.h>
+#include <stdlib.h>
 
 #include "_common.h"
 
 
-extern char **environ;
-
-
 /**
- *
+ * Terminate the process.
  **/
 static int
-env_main(int argc, char **argv) {
-  char **var;
+exit_main(int argc, char** argv) {
+  int rc = 0;
 
-  if(!environ) {
-    return 0;
+  if(argc > 1) {
+    rc = atoi(argv[1]);
   }
 
-  for(var=environ; *var; var++) {
-    fprintf(stdout, "%s\n", *var);
-  }
+  exit(rc);
 
-  return 0;
+  return EXIT_FAILURE;
 }
 
 
@@ -45,7 +40,7 @@ env_main(int argc, char **argv) {
  *
  **/
 __attribute__((constructor)) static void
-env_constructor(void) {
-  builtin_cmd_define("env", "print environment variables",
-                     env_main, true);
+exit_constructor(void) {
+  builtin_cmd_define("exit", "terminate the running shell",
+                     exit_main, false);
 }

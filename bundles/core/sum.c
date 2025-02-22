@@ -48,7 +48,7 @@ sum_main(int argc, char** argv) {
 
   while(argc-- > 0) {
     name = *argv++;
-    
+
     if((fd=open(name, O_RDONLY)) < 0) {
       perror(name);
       r = 1;
@@ -90,5 +90,6 @@ sum_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 sum_constructor(void) {
-  command_define("sum", sum_main);
+  builtin_cmd_define("sum", "compute the checksum of a file",
+                     sum_main, true);
 }

@@ -60,7 +60,7 @@ mknod_main(int argc, char** argv) {
   while(isdigit(*cp)) {
     major = major * 10 + *cp++ - '0';
   }
-  
+
   if (*cp || (major < 0) || (major > 255)) {
     fprintf(stderr, "Bad major number\n");
     return 1;
@@ -72,7 +72,7 @@ mknod_main(int argc, char** argv) {
   while(isdigit(*cp)) {
     minor = minor * 10 + *cp++ - '0';
   }
-  
+
   if(*cp || (minor < 0) || (minor > 255)) {
     fprintf(stderr, "Bad minor number\n");
     return 1;
@@ -92,6 +92,7 @@ mknod_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 mknod_constructor(void) {
-  command_define("mknod", mknod_main);
+  builtin_cmd_define("mknod", "create a special file",
+                     mknod_main, true);
 }
 

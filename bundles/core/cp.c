@@ -78,15 +78,15 @@ cp_main(int argc, char** argv) {
     return -1;
   }
 
-  char* dest = abspath(argv[argc-1]);
-  
+  char* dest = libcore_abspath(argv[argc-1]);
+
   for(int i=0; i<argc-2; i++) {
-    char *src = abspath(argv[i+1]);
-    
+    char *src = libcore_abspath(argv[i+1]);
+
     if(copy_file(src, dest)) {
       perror("cp");
     }
-    
+
     free(src);
   }
 
@@ -101,6 +101,7 @@ cp_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 cp_constructor(void) {
-  command_define("cp", cp_main);
+  builtin_cmd_define("cp", "copy files and directories",
+                     cp_main, true);
 }
 

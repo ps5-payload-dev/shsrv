@@ -66,14 +66,14 @@ ls_main(int argc, char **argv) {
   char buf[PATH_MAX];
   DIR *dir;
   char *p;
-  
+
   if(argc <= 1) {
-    p = get_workdir();
+    p = libcore_getcwd();
   } else {
     p = argv[1];
   }
 
-  p = abspath(p);
+  p = libcore_abspath(p);
 
   if(!(dir=opendir(p))) {
     perror(argv[0]);
@@ -107,6 +107,7 @@ ls_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 ls_constructor(void) {
-  command_define("ls", ls_main);
+  builtin_cmd_define("ls", "list the contents of a directory",
+                     ls_main, true);
 }
 

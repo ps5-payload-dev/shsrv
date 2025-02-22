@@ -22,7 +22,7 @@ along with this program; see the file COPYING. If not, see
 
 
 /**
- * 
+ *
  **/
 static int
 cat_main(int argc, char **argv) {
@@ -57,6 +57,7 @@ cat_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 cat_constructor(void) {
-  command_define("cat", cat_main);
+  builtin_cmd_define("cat", "concatenate and display file contents",
+                     cat_main, true);
 }
 

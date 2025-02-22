@@ -45,6 +45,7 @@ rm_main(int argc, char** argv) {
  *
  **/
 __attribute__((constructor)) static void
-pwd_constructor(void) {
-  command_define("rm", rm_main);
+rm_constructor(void) {
+  builtin_cmd_define("rm", "remove a file",
+                     rm_main, true);
 }

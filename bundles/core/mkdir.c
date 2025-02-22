@@ -38,7 +38,7 @@ mkdir_main(int argc, char **argv) {
   }
 
   for(int i=0; i<argc-1; i++) {
-    char *path = abspath(argv[i+1]);
+    char *path = libcore_abspath(argv[i+1]);
 
     if(mkdir(path, mode)) {
       perror(path);
@@ -56,6 +56,7 @@ mkdir_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 mkdir_constructor(void) {
-  command_define("mkdir", mkdir_main);
+  builtin_cmd_define("mkdir", "create a new directory",
+                     mkdir_main, true);
 }
 

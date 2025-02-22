@@ -179,12 +179,12 @@ sh_waitpid(pid_t pid) {
   }
 
   if(WIFSIGNALED(status)) {
-    printf("Terminated by signal %d\n", WTERMSIG(status));
+    puts(strsignal(WTERMSIG(status)));
     return -1;
   }
 
   if(WIFSTOPPED(status)) {
-    printf("Stopped by signal %d\n", WSTOPSIG(status));
+    puts(strsignal(WSTOPSIG(status)));
   }
 
   return -1;
@@ -281,7 +281,6 @@ sh_readfile(const char* path) {
 static pid_t
 sh_execute(char **argv) {
   char path[PATH_MAX];
-  builtin_cmd_t *cmd;
   pid_t pid = 0;
   uint8_t* elf;
   int argc = 0;
@@ -294,27 +293,19 @@ sh_execute(char **argv) {
     return -1;
   }
 
-  if((cmd=builtin_find_cmd(argv[0]))) {
-    cmd(argc, argv);
-    return 0;
+  if((pid=builtin_cmd_run(argv[0], argc, argv)) >= 0) {
+    return pid;
   }
 
   if(!sh_which(argv[0], path) && (elf=sh_readfile(path))) {
     pid = elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, elf, argv);
     free(elf);
-
-  } else if((elf=builtin_find_elf(argv[0]))) {
-    pid = elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO, elf, argv);
+    return pid;
   }
 
-  if(pid < 0) {
-    return -1;
-  } else if(pid == 0) {
-    fprintf(stderr, "%s: command not found\n", argv[0]);
-    return -1;
-  }
+  fprintf(stderr, "%s: command not found\n", argv[0]);
 
-  return pid;
+  return -1;
 }
 
 

@@ -91,6 +91,7 @@ kill_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 kill_constructor(void) {
-  command_define("kill", kill_main);
+  builtin_cmd_define("kill", "Send signal to a process",
+                     kill_main, true);
 }
 

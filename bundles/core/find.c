@@ -383,5 +383,6 @@ find_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 find_constructor(void) {
-  command_define("find", find_main);
+  builtin_cmd_define("find", "search for files and directories",
+                     find_main, true);
 }

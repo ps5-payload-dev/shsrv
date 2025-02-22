@@ -35,7 +35,7 @@ rmdir_main(int argc, char **argv) {
   }
 
   for(int i=0; i<argc-1; i++) {
-    char *path = abspath(argv[i+1]);
+    char *path = libcore_abspath(argv[i+1]);
 
     if(rmdir(path)) {
       perror(path);
@@ -53,5 +53,6 @@ rmdir_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 rmdir_constructor(void) {
-  command_define("rmdir", rmdir_main);
+  builtin_cmd_define("rmdir", "remove an empty directory",
+                     rmdir_main, true);
 }

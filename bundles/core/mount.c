@@ -51,7 +51,7 @@ build_iovec(struct iovec **iov, int *iovlen, const char *name, const char *val) 
 
   (*iov)[i].iov_base = val ? strdup(val) : NULL;
   (*iov)[i].iov_len = val ? strlen(val) + 1 : 0;
-  i++;  
+  i++;
 
   *iovlen = i;
 }
@@ -132,8 +132,8 @@ mount_fs(char* fstype, char* fspath, char* device, char* options,
 }
 
 
-int
-getmntinfo(struct statfs **bufp, int mode) {
+static int
+_getmntinfo(struct statfs **bufp, int mode) {
   struct statfs *buf;
   int nitems = 0;
   int size = 0;
@@ -166,7 +166,7 @@ print_mountpoints(void) {
   struct statfs *buf;
   int nitems;
 
-  if((nitems=getmntinfo(&buf, MNT_WAIT)) < 0) {
+  if((nitems=_getmntinfo(&buf, MNT_WAIT)) < 0) {
     return -1;
   }
 
@@ -216,11 +216,11 @@ mount_main(int argc, char **argv) {
   }
 
   if(optind < argc) {
-    device = abspath(argv[optind]);
+    device = libcore_abspath(argv[optind]);
   }
 
   if(optind+1 < argc) {
-    fspath = abspath(argv[optind+1]);
+    fspath = libcore_abspath(argv[optind+1]);
   }
 
   if(device && fspath && fstype) {
@@ -254,7 +254,11 @@ mount_main(int argc, char **argv) {
 }
 
 
+/**
+ *
+ **/
 __attribute__((constructor)) static void
 mount_constructor(void) {
-  command_define("mount", mount_main);
+  builtin_cmd_define("mount", "mount a filesystem",
+                     mount_main, true);
 }

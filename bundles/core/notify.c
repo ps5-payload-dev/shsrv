@@ -30,7 +30,7 @@ void sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
 
 
 /**
- * 
+ *
  **/
 static int
 notify_main(int argc, char **argv) {
@@ -52,5 +52,6 @@ notify_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 notify_constructor(void) {
-  command_define("notify", notify_main);
+  builtin_cmd_define("notify", "send a notification to the standard display",
+                     notify_main, true);
 }

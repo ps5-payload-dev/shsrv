@@ -125,6 +125,7 @@ ln_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 ln_constructor(void) {
-  command_define("ln", ln_main);
+  builtin_cmd_define("ln", "create a hard or symbolic link",
+                     ln_main, true);
 }
 

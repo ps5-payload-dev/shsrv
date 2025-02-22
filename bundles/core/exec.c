@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 John Törnblom
+/* Copyright (C) 2025 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -15,29 +15,26 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "_common.h"
-
-
-extern char **environ;
 
 
 /**
  *
  **/
 static int
-env_main(int argc, char **argv) {
-  char **var;
-
-  if(!environ) {
-    return 0;
+exec_main(int argc, char** argv) {
+  if(argc <= 1) {
+    fprintf(stderr, "%s: missing operand\n", argv[0]);
+    return EXIT_FAILURE;
   }
 
-  for(var=environ; *var; var++) {
-    fprintf(stdout, "%s\n", *var);
-  }
+  argv[argc] = NULL;
+  execvp(argv[1], (char **) argv + 1);
+  perror(argv[1]);
 
-  return 0;
+  return EXIT_FAILURE;
 }
 
 
@@ -45,7 +42,7 @@ env_main(int argc, char **argv) {
  *
  **/
 __attribute__((constructor)) static void
-env_constructor(void) {
-  builtin_cmd_define("env", "print environment variables",
-                     env_main, true);
+exec_constructor(void) {
+  builtin_cmd_define("exec", "replace current process image with a signed ELF",
+                     exec_main, false);
 }

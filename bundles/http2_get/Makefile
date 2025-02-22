@@ -20,18 +20,23 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -Wall -Werror
-LDADD  := -lSceNet -lSceSsl -lSceHttp2
+CFLAGS := -g -O0 -Wall -Werror
+LDADD  := -lkernel_sys -lSceNet -lSceSsl -lSceHttp2
 
-all: http2_get.elf.inc
+all: lib.a
+
+main.o: http2_get.elf.inc
 
 http2_get.elf.inc: http2_get.elf
 	xxd -i $^ > $@
 
-http2_get.elf: main.o
+http2_get.elf: http2_get.o
 	$(CC) $(LDADD) -o $@ $^
 
+lib.a: main.o
+	$(AR) -rsc $@ $^
+
 clean:
-	rm -f *.o *.elf *.elf.inc
+	rm -f *.o *.elf *.a *.inc
 
 test:

@@ -39,15 +39,15 @@ chgrp_main(int argc, char ** argv) {
 
   r = 0;
   cp = argv[1];
-  
+
   if(isdigit(*cp)) {
     gid = 0;
-      
+
     while(isdigit(*cp))
       gid = gid * 10 + (*cp++ - '0');
 
     if (*cp) {
-      fprintf(stderr, "Bad gid value\n");  
+      fprintf(stderr, "Bad gid value\n");
       return 1;
     }
   } else {
@@ -67,7 +67,7 @@ chgrp_main(int argc, char ** argv) {
       r = 1;
     }
   }
-  
+
   return r;
 }
 
@@ -77,5 +77,6 @@ chgrp_main(int argc, char ** argv) {
  **/
 __attribute__((constructor)) static void
 chgrp_constructor(void) {
-  command_define("chgrp", chgrp_main);
+  builtin_cmd_define("chgrp", "change group ownership of a file",
+                     chgrp_main, true);
 }

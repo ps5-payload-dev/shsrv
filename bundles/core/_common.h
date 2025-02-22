@@ -19,45 +19,28 @@ along with this program; see the file COPYING. If not, see
 #include <stdint.h>
 #include <stdlib.h>
 
-
-/**
- * Prototype for main functions.
- **/
-typedef int (main_t)(int argc, char **argv);
-
-
-
-/**
- * Insert a command at the head of the sequence.
- **/
-void command_define(const char *name, main_t *main);
-
-
-/**
- * Find the command with a given name.
- **/
-main_t* command_find(const char *name);
+#include "../../builtin.h"
 
 
 /**
  * Return the current working directory of the calling process.
  **/
-char* get_workdir(void);
+char* libcore_getcwd(void);
 
 
 /**
  * Normalize a path.
  **/
-char* normpath(const char *path, char *buf, size_t bufsize);
+char* libcore_normpath(const char *path, char *buf, size_t bufsize);
 
 
 /**
  * Return an absolute path.
  **/
-char* abspath(const char *relpath);
+char* libcore_abspath(const char *relpath);
 
 
 /**
  * Dump a memory region to stdout.
  **/
-void hexdump(void *data, size_t size);
+void libcore_hexdump(void *data, size_t size);

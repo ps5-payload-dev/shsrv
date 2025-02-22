@@ -54,7 +54,7 @@ static void
 keyval_store_insert(keyval_t *kv) {
   keyval_t *next = keyval_store;
   keyval_t *prev = NULL;
-  
+
   while(next && strcmp(next->key, kv->key) < 0) {
     prev = next;
     next = next->next;
@@ -63,7 +63,7 @@ keyval_store_insert(keyval_t *kv) {
   if(prev) {
     kv->next = prev->next;
     prev->next = kv;
-    
+
   } else {
     kv->next = keyval_store;
     keyval_store = kv;
@@ -93,14 +93,14 @@ keyval_store_emit(FILE *fp) {
     .keys_offset = sizeof(sfo_header_t) + sizeof(entries),
     .data_offset = sizeof(sfo_header_t) + sizeof(entries) + sizeof(keys)
   };
-  
+
   memset(keys, 0, keys_size);
   memset(data, 0, data_size);
-  
+
   for(int i=0; i<count; i++) {
     memcpy(keys + keys_offset, kv->key, kv->key_size);
     memcpy(data + data_offset, kv->val, kv->val_size);
-    
+
     entries[i].key_offset = keys_offset;
     entries[i].alignment = 4;
     entries[i].type = kv->type;
@@ -110,10 +110,10 @@ keyval_store_emit(FILE *fp) {
 
     keys_offset += kv->key_size;
     data_offset += kv->val_size;
-    
+
     kv = kv->next;
   }
-  
+
   fwrite(&header, sizeof(sfo_header_t), 1, fp);
   fwrite(entries, sizeof(sfo_entry_t), count, fp);
   fwrite(keys, sizeof(uint8_t), keys_size, fp);
@@ -130,14 +130,14 @@ keyval_parse_integer(char* str) {
   char *delim = NULL;
   char *key = str;
   int val = 0;
-  
+
   if(!(delim = strstr(str, "="))) {
     return -1;
   }
 
   *delim = 0;
   val = atoi(delim + 1);
-  
+
   kv = malloc(sizeof(keyval_t));
   kv->type = TYPE_INT;
 
@@ -164,14 +164,14 @@ keyval_parse_string(char* str, size_t size) {
   char *delim = NULL;
   char *key = str;
   char *val = NULL;
-  
+
   if(!(delim = strstr(str, "="))) {
     return -1;
   }
 
   *delim = 0;
   val = delim + 1;
-  
+
   kv = malloc(sizeof(keyval_t));
   kv->type = TYPE_STR;
 
@@ -210,19 +210,19 @@ sfocreate_main(int argc, char **argv) {
   FILE *fp = stdout;
   char *optarg = NULL;
   uint32_t size = 0;
-  
+
   for(int i=1; i<argc; i++) {
     if(i < argc - 1) {
       optarg = strdup(argv[i+1]);
     } else {
       optarg = NULL;
     }
-    
+
     if(argv[i][0] != '-') {
       if(filename) {
 	free(filename);
       }
-      filename = abspath(argv[i]);
+      filename = libcore_abspath(argv[i]);
 
     } else if(!strcmp(argv[i], "-h")) {
       show_help(argv[0]);
@@ -253,13 +253,13 @@ sfocreate_main(int argc, char **argv) {
     perror(filename);
     return -1;
   }
-  
+
   keyval_store_emit(fp);
 
   if(filename) {
     free(filename);
   }
-  
+
   return 0;
 }
 
@@ -269,5 +269,6 @@ sfocreate_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 sfocreate_constructor(void) {
-  command_define("sfocreate", sfocreate_main);
+  builtin_cmd_define("sfocreate", "create a new PS4 SFO file",
+                     sfocreate_main, true);
 }

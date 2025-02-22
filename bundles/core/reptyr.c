@@ -229,5 +229,6 @@ reptyr_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 reptyr_constructor(void) {
-  command_define("reptyr", reptyr_main);
+  builtin_cmd_define("reptyr", "transfer stdio of a running process to the shell",
+                     reptyr_main, true);
 }

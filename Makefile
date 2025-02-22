@@ -23,10 +23,10 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -Wall -Werror
+CFLAGS := -Wall -g -O0
 
-SUBDIRS := bundles/core bundles/http2_get bundles/launch bundles/hbldr \
-           bundles/sleepmode
+SUBDIRS := bundles/core bundles/http2_get bundles/suspend \
+           bundles/launch bundles/hbldr
 
 TOPTARGETS := all clean
 
@@ -42,14 +42,16 @@ all: shsrv.elf sh.elf
 
 shsrv.o: sh.elf.inc
 
-builtin.o: bundles/core/core.elf.inc bundles/http2_get/http2_get.elf.inc \
-           bundles/launch/launch.elf.inc bundles/hbldr/hbldr.elf.inc 
-
 shsrv.elf: shsrv.o elfldr.o pt.o notify.o
 	$(CC) -lkernel_sys -o $@ $^
 
 sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
-	$(CC) -lkernel_sys -o $@ $^
+	$(CC) -lkernel_sys -o $@ $^ \
+	      -Wl,--whole-archive bundles/core/lib.a \
+	      -Wl,--whole-archive bundles/http2_get/lib.a \
+	      -Wl,--whole-archive bundles/launch/lib.a \
+	      -Wl,--whole-archive bundles/suspend/lib.a \
+	      -Wl,--whole-archive bundles/hbldr/lib.a
 
 sh.elf.inc: sh.elf
 	xxd -i $^ > $@

@@ -22,7 +22,7 @@ along with this program; see the file COPYING. If not, see
 
 
 /**
- * 
+ *
  **/
 static int
 id_main(int argc, char **argv) {
@@ -51,5 +51,6 @@ id_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 id_constructor(void) {
-  command_define("id", id_main);
+  builtin_cmd_define("id", "print user and group IDs",
+                     id_main, true);
 }

@@ -36,6 +36,7 @@ sleep_main(int argc, char **argv) {
 
 __attribute__((constructor)) static void
 sleep_constructor(void) {
-  command_define("sleep", sleep_main);
+  builtin_cmd_define("sleep", "pause execution for a duration",
+                     sleep_main, true);
 }
 

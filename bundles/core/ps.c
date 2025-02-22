@@ -74,7 +74,7 @@ ps_main(int argc, char** argv) {
     return -1;
   }
 
-  printf("     PID      PPID     PGID      SID      UID           AuthId"
+  printf("     PID      PPID     PGID      SID      UID"
          "      State  AppId    TitleId     Memory (MiB)  Command\n");
   for(void *ptr=buf; ptr<(buf+buf_size);) {
     struct kinfo_proc *ki = (struct kinfo_proc*)ptr;
@@ -84,10 +84,9 @@ ps_main(int argc, char** argv) {
       memset(&appinfo, 0, sizeof(appinfo));
     }
 
-    printf("%8u  %8u %8u %8u %8u %016lx %10s   %04x  %9s  %6.1f / %6.1f  %s\n",
+    printf("%8u  %8u %8u %8u %8u %10s   %04x  %9s  %6.1f / %6.1f  %s\n",
 	   ki->ki_pid, ki->ki_ppid, ki->ki_pgid, ki->ki_sid,
-	   ki->ki_uid, kernel_get_ucred_authid(ki->ki_pid),
-           state_abbrev[(int)ki->ki_stat], appinfo.app_id,
+	   ki->ki_uid, state_abbrev[(int)ki->ki_stat], appinfo.app_id,
 	   appinfo.title_id, MiB(ki->ki_rssize * PAGE_SIZE),
            MiB(ki->ki_size), ki->ki_comm);
   }
@@ -103,5 +102,6 @@ ps_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 ps_constructor(void) {
-  command_define("ps", ps_main);
+  builtin_cmd_define("ps", "print process information",
+                     ps_main, true);
 }

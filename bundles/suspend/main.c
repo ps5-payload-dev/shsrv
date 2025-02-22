@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 John Törnblom
+/* Copyright (C) 2025 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -14,30 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
-#include <stdio.h>
+#include "../../builtin.h"
+#include "../../elfldr.h"
 
-#include "_common.h"
-
-
-extern char **environ;
+#include "suspend.elf.inc"
 
 
 /**
  *
  **/
 static int
-env_main(int argc, char **argv) {
-  char **var;
-
-  if(!environ) {
-    return 0;
-  }
-
-  for(var=environ; *var; var++) {
-    fprintf(stdout, "%s\n", *var);
-  }
-
-  return 0;
+suspend_main(int argc, char **argv) {
+  return elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO,
+                      suspend_elf, argv);
 }
 
 
@@ -45,7 +34,8 @@ env_main(int argc, char **argv) {
  *
  **/
 __attribute__((constructor)) static void
-env_constructor(void) {
-  builtin_cmd_define("env", "print environment variables",
-                     env_main, true);
+suspend_constructor(void) {
+  builtin_cmd_define("suspend", "suspend the system into sleep mode",
+                     suspend_main, false);
 }
+

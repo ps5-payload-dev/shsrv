@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 John Törnblom
+/* Copyright (C) 2025 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -15,29 +15,36 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "_common.h"
-
-
-extern char **environ;
 
 
 /**
  *
  **/
 static int
-env_main(int argc, char **argv) {
-  char **var;
+export_main(int argc, char** argv) {
+  char *name;
+  char *val;
+  char *sep;
 
-  if(!environ) {
-    return 0;
+  if(argc < 2 || !(sep=strstr(argv[1], "="))) {
+    printf("usage: %s NAME=value\n", argv[0]);
+    return EXIT_FAILURE;
   }
 
-  for(var=environ; *var; var++) {
-    fprintf(stdout, "%s\n", *var);
+  name = argv[1];
+  *sep = 0;
+  val = sep+1;
+
+  if(setenv(name, val, 1)) {
+    perror(argv[0]);
+    return EXIT_FAILURE;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 
@@ -45,7 +52,7 @@ env_main(int argc, char **argv) {
  *
  **/
 __attribute__((constructor)) static void
-env_constructor(void) {
-  builtin_cmd_define("env", "print environment variables",
-                     env_main, true);
+export_constructor(void) {
+  builtin_cmd_define("export", "set an environment variable",
+                     export_main, false);
 }

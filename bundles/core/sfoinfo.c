@@ -44,7 +44,7 @@ freadstr(FILE *fp) {
       buf[pos] = '\0';
       return buf;
     }
-  
+
     buf[pos++] = c;
     if(pos >= size) {
       size *= 2;
@@ -79,20 +79,20 @@ sfoinfo_file(FILE *fp) {
   if(fread(&entries, sizeof(sfo_entry_t), header.count, fp) < 1) {
     return -1;
   }
-    
+
   for(int i=0; i<header.count; i++) {
     sfo_entry_t *e = &entries[i];
     uint8_t val[e->val_size+1];
     char *key;
-    
+
     if(fseek(fp, header.keys_offset + e->key_offset, SEEK_SET)) {
       return -1;
     }
 
     if(!(key = freadstr(fp))) {
-      return -1;      
+      return -1;
     }
-    
+
     if(fseek(fp, header.data_offset + e->val_offset, SEEK_SET)) {
       free(key);
       return -1;
@@ -101,7 +101,7 @@ sfoinfo_file(FILE *fp) {
     memset(val, 0, sizeof(val));
     if(fread(val, sizeof(uint8_t), e->val_size, fp) != e->val_size) {
       free(key);
-      return -1;      
+      return -1;
     }
 
     printf("%s(", key);
@@ -109,11 +109,11 @@ sfoinfo_file(FILE *fp) {
     case TYPE_INT:
       printf("0x%02x%02x%02x%02x", val[3], val[2], val[1], val[0]);
       break;
-      
+
     case TYPE_STR:
       printf("'%s'", val);
       break;
-      
+
     default:
       printf("%d, 0x", e->type);
       for(int i=0; i<e->val_length; i++) {
@@ -143,7 +143,7 @@ sfoinfo_main(int argc, char **argv) {
   }
 
   for(int i=1; i<argc; i++) {
-    char *path = abspath(argv[i]);
+    char *path = libcore_abspath(argv[i]);
     if(!(fp=fopen(path, "rb"))) {
       perror(argv[i]);
     } else {
@@ -161,5 +161,6 @@ sfoinfo_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 sfoinfo_constructor(void) {
-  command_define("sfoinfo", sfoinfo_main);
+  builtin_cmd_define("sfoinfo", "print information contained in a PS4 SFO file",
+                     sfoinfo_main, true);
 }

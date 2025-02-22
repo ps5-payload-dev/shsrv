@@ -35,5 +35,6 @@ sync_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 sync_constructor(void) {
-  command_define("sync", sync_main);
+  builtin_cmd_define("sync", "write cached data to disk",
+                     sync_main, true);
 }

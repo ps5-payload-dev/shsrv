@@ -76,5 +76,6 @@ touch_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 touch_constructor(void) {
-  command_define("touch", touch_main);
+  builtin_cmd_define("touch", "update the timestamp of a file",
+                     touch_main, true);
 }

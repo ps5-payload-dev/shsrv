@@ -44,7 +44,7 @@ file_check(const char *name) {
   struct stat statbuf;
   char data[8192];
   static char info[1024];
-  
+
   cp = info;
   *cp = '\0';
 
@@ -60,19 +60,19 @@ file_check(const char *name) {
   if(S_ISDIR(mode)) {
     return "directory";
   }
-  
+
   if(S_ISCHR(mode)) {
     return "character device";
   }
-  
+
   if(S_ISBLK(mode)) {
     return "block device";
   }
-  
+
   if(S_ISFIFO(mode)) {
     return "named pipe";
   }
-  
+
   if(S_ISLNK(mode)) {
     return "symbolic link";
   }
@@ -80,7 +80,7 @@ file_check(const char *name) {
   if(S_ISSOCK(mode)) {
     return "socket";
   }
-  
+
   if(!S_ISREG(mode)) {
     sprintf(cp, "unknown mode 0x%x, \n", mode);
     cp += strlen(cp);
@@ -137,7 +137,7 @@ file_check(const char *name) {
   if((data[0] == '\037') && (data[1] == '\213')) {
     return "GZIP file";
   }
-  
+
   if((data[0] == '\177') && (memcmp(&data[1], "ELF", 3) == 0)) {
     strcpy(cp, "ELF program");
     return info;
@@ -194,5 +194,6 @@ file_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 file_constructor(void) {
-  command_define("file", file_main);
+  builtin_cmd_define("file", "determine file type",
+                     file_main, true);
 }

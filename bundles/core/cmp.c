@@ -66,7 +66,7 @@ cmp_main(int argc, char** argv) {
   r = 0;
 
   signal(SIGINT, on_SIGINT);
-  
+
   if(stat(argv[1], &statBuf1) < 0){
     perror(argv[1]);
     return 1;
@@ -106,7 +106,7 @@ cmp_main(int argc, char** argv) {
     if(interupted) {
       goto closefiles;
     }
-    
+
     if((cc1 = read(fd1, buf1, sizeof(buf1))) < 0) {
       perror(argv[1]);
       r = 1;
@@ -157,7 +157,7 @@ cmp_main(int argc, char** argv) {
  closefiles:
   close(fd1);
   close(fd2);
-  
+
   return r;
 }
 
@@ -167,5 +167,6 @@ cmp_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 cmp_constructor(void) {
-  command_define("cmp", cmp_main);
+  builtin_cmd_define("cmp", "compare two files byte by byte",
+                     cmp_main, true);
 }

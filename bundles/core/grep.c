@@ -147,6 +147,7 @@ grep_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 grep_constructor(void) {
-  command_define("grep", grep_main);
+  builtin_cmd_define("grep", "search for text using patterns",
+                     grep_main, true);
 }
 

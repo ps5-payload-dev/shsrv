@@ -1,4 +1,4 @@
-#   Copyright (C) 2024 John Törnblom
+#   Copyright (C) 2025 John Törnblom
 #
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -20,18 +20,23 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -Wall -Werror
+CFLAGS := -g -O0 -Wall -Werror
 LDADD  := -lSceSystemService
 
-all: sleepmode.elf.inc
+all: lib.a
 
-sleepmode.elf.inc: sleepmode.elf
+main.o: suspend.elf.inc
+
+suspend.elf.inc: suspend.elf
 	xxd -i $^ > $@
 
-sleepmode.elf: main.o
+suspend.elf: suspend.o
 	$(CC) $(LDADD) -o $@ $^
 
+lib.a: main.o
+	$(AR) -rsc $@ $^
+
 clean:
-	rm -f *.o *.elf *.elf.inc
+	rm -f *.o *.elf *.a *.inc
 
 test:

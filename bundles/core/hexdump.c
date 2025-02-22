@@ -80,7 +80,7 @@ hexdump_main(int argc, char **argv) {
   FILE *fp = stdin;
 
   if(argc > 1) {
-    char *path = abspath(argv[1]);
+    char *path = libcore_abspath(argv[1]);
 
     if(!(fp=fopen(path, "rb"))) {
       perror(argv[1]);
@@ -100,5 +100,6 @@ hexdump_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 hexdump_constructor(void) {
-  command_define("hexdump", hexdump_main);
+  builtin_cmd_define("hexdump", "display file contents in hexadecimal",
+                     hexdump_main, true);
 }

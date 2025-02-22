@@ -2,4 +2,5 @@
 *.o
 *.elf
 *.elf.inc
+*.a
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 John Törnblom
+/* Copyright (C) 2025 John Törnblom
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -16,7 +16,8 @@ along with this program; see the file COPYING. If not, see
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
+#include <unistd.h>
 
 
 /**
@@ -26,12 +27,13 @@ typedef int (builtin_cmd_t)(int argc, char **argv);
 
 
 /**
- * Find a builtin command by its name.
+ * Define a new builtin command.
  **/
-builtin_cmd_t* builtin_find_cmd(const char* name);
+void builtin_cmd_define(const char* name, const char* desc, builtin_cmd_t* cmd,
+                        bool fork);
 
 
 /**
- * Find a builtin ELF by its name.
+ * Run a builtin command.
  **/
-uint8_t* builtin_find_elf(const char* name);
+pid_t builtin_cmd_run(const char* name, int argc, char** argv);

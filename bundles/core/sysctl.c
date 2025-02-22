@@ -23,11 +23,11 @@ along with this program; see the file COPYING. If not, see
 #include "_common.h"
 
 
-int
+static int
 sysctl_main(int argc, char **argv) {
   size_t size;
   char *buf;
-  
+
   if(argc <= 1) {
     fprintf(stderr, "%s: missing operand\n", argv[0]);
     return -1;
@@ -38,21 +38,21 @@ sysctl_main(int argc, char **argv) {
   } else {
     buf = malloc(size);
     memset(buf, 0, size);
-  
+
     if((sysctlbyname(argv[1], buf, &size, 0, 0)) < 0) {
       perror(argv[0]);
     }
 
-    hexdump(buf, size);
+    libcore_hexdump(buf, size);
     free(buf);
   }
 
-  
   return 0;
 }
 
 
 __attribute__((constructor)) static void
 sysctl_constructor(void) {
-  command_define("sysctl", sysctl_main);
+  builtin_cmd_define("sysctl", "print a kernel parameter",
+                     sysctl_main, true);
 }

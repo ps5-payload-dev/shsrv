@@ -52,7 +52,7 @@ umount_main(int argc, char **argv) {
   }
 
   if(optind < argc) {
-    path = abspath(argv[optind]);
+    path = libcore_abspath(argv[optind]);
   } else {
     fprintf(stderr, "%s: missing operand\n", argv[0]);
     return -1;
@@ -73,5 +73,6 @@ umount_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 umount_constructor(void) {
-  command_define("umount", umount_main);
+  builtin_cmd_define("umount", "unmount a filesystem",
+                     umount_main, true);
 }

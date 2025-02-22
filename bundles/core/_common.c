@@ -32,51 +32,14 @@ along with this program; see the file COPYING. If not, see
 #define ispathend(ch)   (ispathsep(ch) || iseos(ch))
 
 
-/**
- * A sequence of commands.
- **/
-typedef struct command_seq {
-  const char         *name;
-  main_t             *main;
-  struct command_seq *next;
-} command_seq_t;
-
-
-/**
- * Head of the command sequence.
- **/
-static command_seq_t* g_head = 0;
-
-
-void
-command_define(const char *name, main_t *main) {
-  command_seq_t* cs = malloc(sizeof(command_seq_t));
-  cs->name = name;
-  cs->main = main;
-  cs->next = g_head;
-  g_head = cs;
-}
-
-
-main_t*
-command_find(const char *name) {
-  for(command_seq_t* cs=g_head; cs; cs=cs->next) {
-    if(!strcmp(name, cs->name)) {
-      return cs->main;
-    }
-  }
-  return 0;
-}
-
-
 char*
-get_workdir(void) {
+libcore_getcwd(void) {
   return getenv("PWD");
 }
 
 
 char*
-normpath(const char *in, char *buf, size_t bufsize) {
+libcore_normpath(const char *in, char *buf, size_t bufsize) {
   char *pos[PATH_MAX];
   char **top = pos;
   char *head = buf;
@@ -149,22 +112,22 @@ normpath(const char *in, char *buf, size_t bufsize) {
 
 
 char*
-abspath(const char *relpath) {
+libcore_abspath(const char *relpath) {
   char buf[PATH_MAX];
 
   if(relpath[0] == '/') {
     strncpy(buf, relpath, sizeof(buf));
   } else {
-    snprintf(buf, sizeof(buf), "%s/%s", get_workdir(), relpath);
+    snprintf(buf, sizeof(buf), "%s/%s", libcore_getcwd(), relpath);
   }
 
   char *ap = malloc(PATH_MAX);
-  return normpath(buf, ap, PATH_MAX);
+  return libcore_normpath(buf, ap, PATH_MAX);
 }
 
 
 void
-hexdump(void *data, size_t size) {
+libcore_hexdump(void *data, size_t size) {
 
   for(int i=0; i<size; i+=16) {
     uint8_t *buf = (uint8_t*)data+i;
@@ -185,10 +148,10 @@ hexdump(void *data, size_t size) {
     for(int j=0; j<n; j++) {
       if(isblank(buf[j])) {
 	printf(" ");
- 
+
       } else if(!isprint(buf[j])) {
 	printf(".");
- 
+
       } else {
 	printf("%c", buf[j]);
       }

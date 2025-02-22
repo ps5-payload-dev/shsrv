@@ -20,7 +20,7 @@ along with this program; see the file COPYING. If not, see
 
 
 /**
- * 
+ *
  **/
 static int
 echo_main(int argc, char **argv) {
@@ -29,7 +29,7 @@ echo_main(int argc, char **argv) {
   }
 
   printf("\n");
-  
+
   return 0;
 }
 
@@ -39,5 +39,6 @@ echo_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 echo_constructor(void) {
-  command_define("echo", echo_main);
+  builtin_cmd_define("echo", "print text to standard output.",
+                     echo_main, true);
 }

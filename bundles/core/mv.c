@@ -257,5 +257,6 @@ mv_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 mv_constructor(void) {
-  command_define("mv", mv_main);
+  builtin_cmd_define("mv", "move or rename a file",
+                     mv_main, true);
 }

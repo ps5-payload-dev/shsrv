@@ -45,18 +45,18 @@ chmod_main(int argc, char** argv) {
     fprintf(stderr, "Mode must be octal\n");
     return 1;
   }
-  
+
   argc--;
   argv++;
-  
+
   while(argc-- > 1) {
     if(chmod(argv[1], mode) < 0) {
       perror(argv[1]);
       r = 1;
-    }    
+    }
     argv++;
   }
-  
+
   return r;
 }
 
@@ -66,5 +66,6 @@ chmod_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 chmod_constructor(void) {
-  command_define("chmod", chmod_main);
+  builtin_cmd_define("chmod", "change file permissions",
+                     chmod_main, true);
 }

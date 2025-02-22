@@ -35,7 +35,7 @@ chown_main(int argc, char** argv) {
   int uid;
   struct stat statBuf;
   int r;
-  
+
   r = 0;
   cp = argv[1];
 
@@ -76,6 +76,7 @@ chown_main(int argc, char** argv) {
  **/
 __attribute__((constructor)) static void
 chown_constructor(void) {
-  command_define("chown", chown_main);
+  builtin_cmd_define("chown", "change file owner and group",
+                     chown_main, true);
 }
 

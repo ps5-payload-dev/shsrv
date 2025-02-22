@@ -34,7 +34,7 @@ stat_main(int argc, char **argv) {
     return -1;
   }
 
-  char *path = abspath(argv[1]);
+  char *path = libcore_abspath(argv[1]);
 
   if(stat(path, &statbuf) != 0) {
     perror(path);
@@ -66,5 +66,6 @@ stat_main(int argc, char **argv) {
  **/
 __attribute__((constructor)) static void
 stat_constructor(void) {
-  command_define("stat", stat_main);
+  builtin_cmd_define("stat", " print detailed file information",
+                     stat_main, true);
 }
