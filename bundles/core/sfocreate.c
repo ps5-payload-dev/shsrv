@@ -197,7 +197,7 @@ static void
 show_help(const char *progname) {
   printf("usage: %s [-i KEY=VALUE] [-s<SIZE> KEY=VALUE]... param.sfo\n",
 	 progname);
-  exit(1);
+  _exit(1);
 }
 
 

@@ -210,7 +210,7 @@ mount_main(int argc, char **argv) {
     case 'h':
     default:
       printf("usage: %s -t fstype [-u] [-o otpions] <device> <dir>\n", argv[0]);
-      exit(1);
+      _exit(1);
       break;
     }
   }

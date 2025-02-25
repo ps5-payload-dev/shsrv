@@ -34,7 +34,51 @@ along with this program; see the file COPYING. If not, see
 
 #include "elfldr.h"
 #include "notify.h"
-#include "sh.elf.inc"
+#include "sh.h"
+
+
+/**
+ *
+ **/
+int sceKernelSetBudget(long);
+int sceKernelSetProcessName(const char*);
+
+
+/**
+ *
+ **/
+static int
+fork_sh(int connfd, int srvfd) {
+  switch(fork()) {
+  case -1:
+    perror("fork");
+    return -1;
+
+  case 0:
+    break;
+
+  default:
+    return 0;
+  }
+
+  if(sceKernelSetBudget(0)) {
+    return -1;
+  }
+
+  sceKernelSetProcessName("sh");
+
+  close(srvfd);
+  close(STDERR_FILENO);
+  close(STDOUT_FILENO);
+  close(STDIN_FILENO);
+
+  dup2(connfd, STDIN_FILENO);
+  dup2(connfd, STDOUT_FILENO);
+  dup2(connfd, STDERR_FILENO);
+
+  _exit(sh_main());
+}
+
 
 
 /**
@@ -44,9 +88,7 @@ static int
 serve_sh(uint16_t port, int notify_user) {
   struct sockaddr_in server_addr;
   struct sockaddr_in client_addr;
-
   char ip[INET_ADDRSTRLEN];
-  char* argv[] = {"sh", 0};
   struct ifaddrs *ifaddr;
   int ifaddr_wait = 1;
   socklen_t addr_len;
@@ -56,7 +98,7 @@ serve_sh(uint16_t port, int notify_user) {
 
   if(getifaddrs(&ifaddr) == -1) {
     klog_perror("getifaddrs");
-    exit(EXIT_FAILURE);
+    _exit(EXIT_FAILURE);
   }
 
   // Enumerate all AF_INET IPs
@@ -140,7 +182,7 @@ serve_sh(uint16_t port, int notify_user) {
       break;
     }
 
-    elfldr_spawn(connfd, connfd, -1, sh_elf, argv);
+    fork_sh(connfd, srvfd);
     close(connfd);
   }
 

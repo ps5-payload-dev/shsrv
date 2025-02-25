@@ -14,33 +14,5 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
-#include <stdlib.h>
+int sh_main(void);
 
-#include "_common.h"
-
-
-/**
- * Terminate the process.
- **/
-static int
-exit_main(int argc, char** argv) {
-  int rc = 0;
-
-  if(argc > 1) {
-    rc = atoi(argv[1]);
-  }
-
-  _exit(rc);
-
-  return EXIT_FAILURE;
-}
-
-
-/**
- *
- **/
-__attribute__((constructor)) static void
-exit_constructor(void) {
-  builtin_cmd_define("exit", "terminate the running shell",
-                     exit_main, false);
-}

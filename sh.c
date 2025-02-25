@@ -170,7 +170,7 @@ sh_waitpid(pid_t pid) {
   pid_t res;
 
   if((res=waitpid(pid, &status, WUNTRACED)) < 0) {
-    perror("waitpid");
+    //perror("waitpid"); //TODO: fixme
     return -1;
   }
 
@@ -400,7 +400,7 @@ sh_thread(void *ctx) {
     sh_prompt();
 
     if(!(line=sh_readline())) {
-      exit(0);
+      _exit(0);
     }
 
     if(!(cmds=sh_splitstring(line, SHELL_CMD_DELIM))) {
@@ -446,7 +446,7 @@ sh_thread(void *ctx) {
     close(outfd);
   }
 
-  exit(0);
+  _exit(0);
 }
 
 
@@ -508,6 +508,7 @@ sh_on_telnet_iac(telnet_client_state_t *state, telnet_event_t *ev) {
   }
 }
 
+
 static void
 sh_telnet_evt(telnet_t *telnet, telnet_event_t *ev, void *ctx) {
   telnet_client_state_t *state = (telnet_client_state_t*)ctx;
@@ -544,10 +545,8 @@ sh_telnet_evt(telnet_t *telnet, telnet_event_t *ev, void *ctx) {
 }
 
 
-/**
- * Launch sh.elf.
- **/
-int main(int argc, char** argv) {
+int
+sh_main(void) {
   telnet_client_state_t state;
   struct pollfd pollfds[2];
   char buf[0x1000];
@@ -563,35 +562,35 @@ int main(int argc, char** argv) {
   if(!(state.telnet=telnet_init(telopts, sh_telnet_evt, TELNET_FLAG_NVT_EOL,
 				&state))) {
     klog_perror("telnet_init");
-    exit(errno);
+    _exit(errno);
   }
 
   // create a pipe for stdin so we can intercept its data and signal
   // the telnet state machine
   if(pipe(pipefds) < 0) {
     klog_perror("pipe");
-    exit(errno);
+    _exit(errno);
   }
   if(dup2(pipefds[0], STDIN_FILENO) < 0) {
     klog_perror("dup2");
-    exit(errno);
+    _exit(errno);
   }
   state.stdin_write_fd = pipefds[1];
 
   // do the same for staout and stderr
   if(pipe(pipefds)) {
     klog_perror("pipe");
-    exit(errno);
+    _exit(errno);
   }
   state.stdout_read_fd = pipefds[0];
   if(dup2(pipefds[1], STDOUT_FILENO) < 0) {
     klog_perror("dup2");
-    exit(errno);
+    _exit(errno);
   }
   setvbuf(stdout, NULL, _IONBF, 0); // no buffering
   if(dup2(pipefds[1], STDERR_FILENO) < 0) {
     klog_perror("dup2");
-    exit(errno);
+    _exit(errno);
   }
   setvbuf(stderr, NULL, _IONBF, 0); // no buffering
 
@@ -609,13 +608,13 @@ int main(int argc, char** argv) {
   while(1) {
     if(poll(pollfds, 2, 1) < 0) {
       klog_perror("poll");
-      exit(errno);
+      _exit(errno);
     }
 
     if(pollfds[0].revents & (POLLERR | POLLHUP) ||
        pollfds[1].revents & (POLLERR | POLLHUP)) {
       klog_perror("poll");
-      exit(errno);
+      _exit(errno);
     }
 
     if(pollfds[0].revents & POLLIN) {
@@ -623,7 +622,7 @@ int main(int argc, char** argv) {
 	if(len) {
 	  klog_perror("read");
 	}
-	exit(errno);
+	_exit(errno);
       }
       telnet_recv(state.telnet, buf, len);
     }
@@ -632,12 +631,12 @@ int main(int argc, char** argv) {
 	if(len) {
 	  klog_perror("read");
 	}
-	exit(errno);
+	_exit(errno);
       }
       telnet_send_text(state.telnet, buf, len);
     }
   }
 
   telnet_free(state.telnet);
-  exit(0);
+  _exit(0);
 }

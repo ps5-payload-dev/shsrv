@@ -38,23 +38,19 @@ $(SUBDIRS):
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
 
-all: shsrv.elf sh.elf
+all: shsrv.elf
 
-shsrv.o: sh.elf.inc
+shsrv.elf: bundles/core/lib.a bundles/http2_get/lib.a \
+           bundles/launch/lib.a bundles/suspend/lib.a \
+           bundles/hbldr/lib.a
 
-shsrv.elf: shsrv.o elfldr.o pt.o notify.o
-	$(CC) -lkernel_sys -o $@ $^
-
-sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
+shsrv.elf: shsrv.o elfldr.o pt.o notify.o sh.o builtin.o libtelnet.o
 	$(CC) -lkernel_sys -o $@ $^ \
 	      -Wl,--whole-archive bundles/core/lib.a \
 	      -Wl,--whole-archive bundles/http2_get/lib.a \
 	      -Wl,--whole-archive bundles/launch/lib.a \
 	      -Wl,--whole-archive bundles/suspend/lib.a \
 	      -Wl,--whole-archive bundles/hbldr/lib.a
-
-sh.elf.inc: sh.elf
-	xxd -i $^ > $@
 
 clean:
 	rm -f *.o *.elf
