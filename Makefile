@@ -26,7 +26,7 @@ endif
 CFLAGS := -Wall -g -O0
 
 SUBDIRS := bundles/core bundles/http2_get bundles/suspend \
-           bundles/launch bundles/hbldr
+           bundles/launch bundles/hbldr bundles/pkg_install
 
 TOPTARGETS := all clean
 
@@ -51,7 +51,8 @@ sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
 	      -Wl,--whole-archive bundles/http2_get/lib.a \
 	      -Wl,--whole-archive bundles/launch/lib.a \
 	      -Wl,--whole-archive bundles/suspend/lib.a \
-	      -Wl,--whole-archive bundles/hbldr/lib.a
+	      -Wl,--whole-archive bundles/hbldr/lib.a \
+	      -Wl,--whole-archive bundles/pkg_install/lib.a
 
 sh.elf.inc: sh.elf
 	xxd -i $^ > $@
