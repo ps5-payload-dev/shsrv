@@ -37,6 +37,7 @@ $(SUBDIRS):
 
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
+.NOTPARALLEL:
 
 all: shsrv.elf sh.elf
 
