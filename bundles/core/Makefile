@@ -20,7 +20,7 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -g -O0 -Wall -Werror
+CFLAGS := -Wall -Werror
 
 SRCS := $(wildcard *.c)
 OBJS := $(SRCS:.c=.o)

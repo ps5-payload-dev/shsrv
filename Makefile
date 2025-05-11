@@ -23,7 +23,7 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -Wall -g -O0
+CFLAGS := -Wall -Werror
 
 SUBDIRS := bundles/core bundles/http2_get bundles/suspend \
            bundles/launch bundles/hbldr bundles/pkg_install

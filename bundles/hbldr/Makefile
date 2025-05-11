@@ -20,7 +20,7 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-CFLAGS := -g -O0 -Wall -Werror
+CFLAGS := -Wall -Werror
 LDADD  += -lkernel_sys -lSceSystemService -lSceUserService
 
 all: lib.a
