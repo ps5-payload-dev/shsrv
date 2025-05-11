@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#   Copyright (C) 2025 John Törnblom
+#
+# This file is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING. If not see
+# <http://www.gnu.org/licenses/>.
+
+SHSRV_PORT=2323
+
+if [ "$#" -lt 1 ]; then
+    echo "usage: $0 <HOST> [PORT]"
+    exit 1
+fi
+
+SHSRV_HOST=$1
+
+if [ "$#" -gt 1 ]; then
+    SHSRV_PORT=$2
+fi
+
+if [ -x "$(command -v "rlwrap")" ]; then
+   rlwrap telnet $SHSRV_HOST $SHSRV_PORT
+else
+    telnet $SHSRV_HOST $SHSRV_PORT
+fi
