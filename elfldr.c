@@ -77,13 +77,6 @@ static const char* SceSpZeroConf = "/system/vsh/app/NPXS40112/eboot.bin";
 /**
  *
  **/
-int sceKernelSpawn(int *pid, int dbg, const char *path, char *root,
-		   char* argv[]);
-
-
-/**
- *
- **/
 extern char** environ;
 
 
