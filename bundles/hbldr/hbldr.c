@@ -31,7 +31,6 @@ along with this program; see the file COPYING. If not, see
 #include <sys/wait.h>
 
 #include <ps5/kernel.h>
-#include <ps5/mdbg.h>
 
 #include "../../elfldr.h"
 #include "../../pt.h"
@@ -289,15 +288,15 @@ bigapp_set_argv0(pid_t pid, const char* argv0) {
   }
 
   // copy string
-  if(mdbg_copyin(pid, argv0, buf, strlen(argv0)+1)) {
-    perror("mdbg_copyin");
+  if(pt_copyin(pid, argv0, buf, strlen(argv0)+1)) {
+    perror("pt_copyin");
     pt_munmap(pid, buf, PAGE_SIZE);
     return -1;
   }
 
   // copy pointer to string
-  if(mdbg_setlong(pid, pos, buf)) {
-    perror("mdbg_setlong");
+  if(pt_setlong(pid, pos, buf)) {
+    perror("pt_setlong");
     pt_munmap(pid, buf, PAGE_SIZE);
     return -1;
   }
@@ -406,12 +405,18 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname, intptr_t* baseaddr) {
     return -1;
   }
   brkpoint += 58;// offset to invocation of main()
-  if(mdbg_copyout(pid, brkpoint, &orginstr, sizeof(orginstr))) {
-    perror("mdbg_copyout");
+
+  if(kernel_mprotect(pid, brkpoint, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC)) {
+    puts("kernel_mprotect failed");
     return -1;
   }
-  if(mdbg_copyin(pid, &int3instr, brkpoint, sizeof(int3instr))) {
-    perror("mdbg_copyin");
+
+  if(pt_copyout(pid, brkpoint, &orginstr, sizeof(orginstr))) {
+    perror("pt_copyout");
+    return -1;
+  }
+  if(pt_copyin(pid, &int3instr, brkpoint, sizeof(int3instr))) {
+    perror("pt_copyin");
     return -1;
   }
 
@@ -424,8 +429,8 @@ bigapp_replace(pid_t pid, uint8_t* elf, char* progname, intptr_t* baseaddr) {
     perror("waitpid");
     return -1;
   }
-  if(mdbg_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
-    perror("mdbg_copyin");
+  if(pt_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
+    perror("pt_copyin");
     return -1;
   }
 
