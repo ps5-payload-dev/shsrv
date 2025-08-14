@@ -39,11 +39,11 @@ $(SUBDIRS):
 
 .NOTPARALLEL:
 
-all: shsrv.elf sh.elf
+all: shsrv-ps5.elf sh.elf
 
 shsrv.o: sh.elf.inc
 
-shsrv.elf: shsrv.o elfldr.o pt.o notify.o
+shsrv-ps5.elf: shsrv.o elfldr.o pt.o notify.o
 	$(CC) -lkernel_sys -o $@ $^
 
 sh.elf: sh.o builtin.o elfldr.o pt.o libtelnet.o
@@ -61,6 +61,6 @@ sh.elf.inc: sh.elf
 clean:
 	rm -f *.o *.elf
 
-test: shsrv.elf
+test: shsrv-ps5.elf
 	$(PS5_DEPLOY) -h $(PS5_HOST) -p $(PS5_PORT) $^
 
