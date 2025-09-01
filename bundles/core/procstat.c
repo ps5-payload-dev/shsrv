@@ -156,7 +156,7 @@ vmmap_handler(struct kinfo_proc* ki, bool header) {
 	    	break;
 	  }
 
-	  printf("%-2s ", str);
+	printf("%-2s ", str);
     printf("%-s ", kve->kve_path);
     printf("\n");
   }
