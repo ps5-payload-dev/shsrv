@@ -37,5 +37,8 @@ __attribute__((constructor)) static void
 launch_constructor(void) {
   builtin_cmd_define("launch", "start a game or SCE application",
                      launch_main, false);
+
+  builtin_cmd_define("browse", "Start the builtin browser",
+                     launch_main, false);
 }
 
