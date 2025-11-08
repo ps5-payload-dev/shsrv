@@ -128,7 +128,7 @@ mount_fs(char* fstype, char* fspath, char* device, char* options,
     free(opts);
   }
 
-  return syscall(SYS_nmount, iov, iovlen, flags);
+  return nmount(iov, iovlen, flags);
 }
 
 
