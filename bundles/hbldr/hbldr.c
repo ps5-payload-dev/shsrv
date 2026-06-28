@@ -251,6 +251,7 @@ find_pid(const char* name) {
 
   if(sysctl(mib, 4, buf, &buf_size, 0, 0)) {
     perror("sysctl");
+    free(buf);
     return -1;
   }
 
