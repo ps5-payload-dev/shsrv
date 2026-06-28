@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
+#include <signal.h>
+
+#include <sys/wait.h>
+
 #include "../../builtin.h"
 #include "../../elfldr.h"
 
@@ -25,8 +29,24 @@ along with this program; see the file COPYING. If not, see
  **/
 static int
 hbldr_main(int argc, char **argv) {
-  return elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO,
-                      hbldr_elf, argv);
+  int status;
+  pid_t res;
+  pid_t pid;
+
+  if((pid=elfldr_spawn(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO,
+		       hbldr_elf, argv)) < 0) {
+    return -1;
+  }
+
+  if((res=waitpid(pid, &status, WUNTRACED)) < 0) {
+    return -1;
+  }
+
+  if(WIFEXITED(status)) {
+    return WEXITSTATUS(status);
+  }
+
+  return -1;
 }
 
 
