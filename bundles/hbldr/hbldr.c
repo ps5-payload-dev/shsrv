@@ -605,7 +605,8 @@ main(int argc, char** argv) {
 
     printf("export PS5_HOST=ps5\n");
     printf("export HOMEBREW=%s\n", argv[1]);
-    printf("gdb \\\n");
+    printf("gdb-multiarch \\\n");
+    printf("    -ex \"set architecture i386:x86-64\" \\\n");
     printf("    -ex \"target extended-remote $PS5_HOST:2159\" \\\n");
     printf("    -ex \"attach %d\" \\\n", pid);
     printf("    -ex \"add-symbol-file $HOMEBREW -readnow -o 0x%lx\"\n", baseaddr);
